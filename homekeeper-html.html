@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#080812">
+<title>HomeKeeper</title>
+<link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiSG9tZUtlZXBlciIsInNob3J0X25hbWUiOiJIS2VlcGVyIiwic3RhcnRfdXJsIjoiLiIsImRpc3BsYXkiOiJzdGFuZGFsb25lIiwiYmFja2dyb3VuZF9jb2xvciI6IiMwODA4MTIiLCJ0aGVtZV9jb2xvciI6IiMwODA4MTIifQ==">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#080812;--card:rgba(15,15,30,0.75);--border:rgba(255,255,255,0.08);--text:#e0e0e0;--text2:rgba(255,255,255,0.5);--text3:rgba(255,255,255,0.3);--cyan:#0ff;--magenta:#f0f;--lime:#0f0;--amber:#fb0;--red:#f55;--input-bg:rgba(255,255,255,0.06);--input-border:rgba(255,255,255,0.1)}
+html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:linear-gradient(180deg,#080812 0%,#0a0a1a 50%,#0d0815 100%);color:var(--text);-webkit-tap-highlight-color:transparent}
+#app{max-width:480px;margin:0 auto;height:100%;display:flex;flex-direction:column;position:relative;overflow:hidden}
+canvas#lasers{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;opacity:0.4;z-index:0}
+.header{padding:12px 20px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:20;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);background:rgba(8,8,18,0.85)}
+.header.emp{border-bottom:1px solid rgba(255,0,255,0.15)}
+.header.worker{border-bottom:1px solid rgba(0,255,255,0.15)}
+.header-icon{width:36px;height:36px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:18px}
+.header h1{font-size:16px;font-weight:800;color:#fff}
+.header p{font-size:11px}
+.switch-btn{margin-left:auto;font-size:11px;color:rgba(255,255,255,0.4);background:rgba(255,255,255,0.05);border:none;padding:4px 8px;border-radius:8px;cursor:pointer}
+.content{flex:1;overflow-y:auto;padding:20px 16px 100px;position:relative;z-index:10;-webkit-overflow-scrolling:touch}
+.content::-webkit-scrollbar{display:none}
+.tab-bar{position:fixed;bottom:0;left:0;right:0;max-width:480px;margin:0 auto;z-index:20;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);background:rgba(8,8,18,0.92);display:flex;justify-content:space-around;padding:8px 0;padding-bottom:max(8px,env(safe-area-inset-bottom))}
+.tab-btn{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 8px;border-radius:12px;border:none;background:none;cursor:pointer;position:relative;transition:all 0.2s}
+.tab-btn svg{width:17px;height:17px;stroke-width:1.5}
+.tab-btn.active svg{stroke-width:2.5}
+.tab-btn span{font-size:10px;font-weight:600}
+.tab-badge{position:absolute;top:-2px;right:-2px;width:16px;height:16px;border-radius:50%;background:#f00;color:#fff;font-size:9px;display:flex;align-items:center;justify-content:center;box-shadow:0 0 8px rgba(255,0,0,0.5)}
+.card{border-radius:16px;padding:20px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);background:var(--card);border:1px solid var(--border);margin-bottom:16px}
+.card.glow-cyan{border-color:rgba(0,255,255,0.2);box-shadow:0 0 20px rgba(0,255,255,0.08)}
+.card.glow-magenta{border-color:rgba(255,0,255,0.2);box-shadow:0 0 20px rgba(255,0,255,0.08)}
+.card.glow-lime{border-color:rgba(0,255,0,0.15);box-shadow:0 0 20px rgba(0,255,0,0.06)}
+.label{font-size:10px;text-transform:uppercase;letter-spacing:1.5px;font-weight:700;margin-bottom:12px}
+.label.cyan{color:rgba(0,255,255,0.6)}.label.magenta{color:rgba(255,0,255,0.6)}.label.amber{color:rgba(255,180,0,0.6)}.label.lime{color:rgba(0,255,0,0.6)}
+input,textarea,select{width:100%;padding:10px 12px;border-radius:12px;font-size:14px;background:var(--input-bg);border:1px solid var(--input-border);color:var(--text);outline:none;font-family:inherit;-webkit-appearance:none}
+input:focus,textarea:focus{border-color:rgba(0,255,255,0.3)}
+input[type="date"]{color-scheme:dark}
+textarea{resize:none}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:10px 20px;border-radius:12px;font-size:13px;font-weight:700;border:1px solid;cursor:pointer;transition:all 0.2s;font-family:inherit;-webkit-appearance:none}
+.btn.full{width:100%}
+.btn.sm{padding:6px 12px;font-size:11px}
+.btn.cyan{background:rgba(0,255,255,0.12);color:var(--cyan);border-color:rgba(0,255,255,0.3);box-shadow:0 0 12px rgba(0,255,255,0.15)}
+.btn.cyan:active{background:rgba(0,255,255,0.25)}
+.btn.magenta{background:rgba(255,0,255,0.12);color:var(--magenta);border-color:rgba(255,0,255,0.3);box-shadow:0 0 12px rgba(255,0,255,0.15)}
+.btn.red{background:rgba(255,0,0,0.12);color:var(--red);border-color:rgba(255,0,0,0.3);box-shadow:0 0 12px rgba(255,0,0,0.15)}
+.btn.amber{background:rgba(255,180,0,0.12);color:var(--amber);border-color:rgba(255,180,0,0.3);box-shadow:0 0 12px rgba(255,180,0,0.15)}
+.btn:disabled{opacity:0.3;pointer-events:none}
+.row{display:flex;gap:8px;align-items:center}
+.row.between{justify-content:space-between}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.grid7{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.area-btn{padding:12px;border-radius:12px;text-align:left;border:1px solid rgba(255,255,255,0.06);background:rgba(255,255,255,0.03);cursor:pointer;transition:all 0.3s}
+.area-btn.sel{background:rgba(0,255,255,0.1);border-color:rgba(0,255,255,0.4);box-shadow:0 0 15px rgba(0,255,255,0.15)}
+.area-btn .icon{font-size:20px;margin-bottom:4px}
+.area-btn .name{font-size:11px;font-weight:700;color:#fff}
+.area-btn .count{font-size:10px;color:var(--text3)}
+.progress-wrap{margin-bottom:8px}
+.progress-label{display:flex;justify-content:space-between;font-size:10px;margin-bottom:4px}
+.progress-bar{width:100%;height:8px;border-radius:8px;background:rgba(255,255,255,0.08);overflow:hidden}
+.progress-fill{height:100%;border-radius:8px;transition:width 0.5s}
+.chore-item{display:flex;align-items:center;gap:8px;padding:10px;border-radius:12px;margin-bottom:6px;transition:all 0.2s}
+.chore-item.done{background:rgba(0,255,0,0.06);border:1px solid rgba(0,255,0,0.15)}
+.chore-item.undone{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.04)}
+.chk{width:20px;height:20px;border-radius:6px;border:2px solid rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:all 0.2s}
+.chk.checked{background:var(--lime);border-color:var(--lime);box-shadow:0 0 8px rgba(0,255,0,0.4)}
+.chore-name{font-size:13px;flex:1}
+.chore-name.done{text-decoration:line-through;color:var(--text3)}
+.chore-time{font-size:10px;color:rgba(0,255,255,0.5);cursor:pointer;display:flex;align-items:center;gap:3px}
+.time-edit{display:flex;align-items:center;gap:4px}
+.time-edit input{width:56px;padding:3px;text-align:center;font-size:11px;border-radius:6px}
+.time-edit button{background:none;border:none;cursor:pointer;padding:2px}
+.status-badge{font-size:10px;padding:2px 8px;border-radius:99px;font-weight:600}
+.badge-pending{background:rgba(255,180,0,0.15);color:var(--amber)}
+.badge-approved,.badge-acknowledged{background:rgba(0,255,0,0.15);color:var(--lime)}
+.badge-declined{background:rgba(255,0,0,0.15);color:var(--red)}
+.stat-box{text-align:center;padding:12px;border-radius:12px}
+.stat-box .val{font-size:22px;font-weight:900}
+.stat-box .lbl{font-size:10px;color:var(--text2);margin-top:2px}
+.cal-day{aspect-ratio:1;border-radius:10px;font-size:11px;font-weight:600;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer;transition:all 0.2s;border:1px solid transparent}
+.cal-day.worked{background:rgba(0,255,0,0.2);border-color:rgba(0,255,0,0.4);color:var(--lime);box-shadow:0 0 8px rgba(0,255,0,0.2)}
+.cal-day.leave{background:rgba(255,180,0,0.1);border-color:rgba(255,180,0,0.3);color:var(--amber)}
+.cal-day.today{box-shadow:0 0 10px rgba(255,0,255,0.4),inset 0 0 10px rgba(255,0,255,0.1)}
+.cal-day.normal{background:rgba(255,255,255,0.03);color:var(--text2)}
+.cal-hdr{text-align:center;font-size:10px;color:var(--text3);font-weight:600;padding:4px 0}
+.upload-zone{display:flex;align-items:center;justify-content:center;gap:8px;padding:16px;border:2px dashed rgba(0,255,255,0.2);border-radius:12px;cursor:pointer;transition:all 0.2s;font-size:13px;color:var(--text2)}
+.upload-zone:active{background:rgba(0,255,255,0.05)}
+.photo-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.photo-thumb{position:relative;border-radius:12px;overflow:hidden;border:1px solid rgba(0,255,255,0.15)}
+.photo-thumb img{width:100%;height:120px;object-fit:cover;display:block}
+.photo-thumb .date{position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,0.7);font-size:10px;padding:4px 6px;color:rgba(255,255,255,0.6)}
+.photo-thumb .del{position:absolute;top:4px;right:4px;width:22px;height:22px;border-radius:50%;background:rgba(255,0,0,0.8);color:#fff;border:none;font-size:14px;cursor:pointer;display:none;align-items:center;justify-content:center}
+.photo-thumb:hover .del{display:flex}
+.leave-type-btn{flex:1;padding:8px;border-radius:12px;font-size:11px;font-weight:700;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.04);color:var(--text2);cursor:pointer;text-align:center;transition:all 0.2s}
+.leave-type-btn.sel{background:rgba(255,0,255,0.2);border-color:rgba(255,0,255,0.4);color:var(--magenta)}
+.log-entry{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;font-size:11px;margin-bottom:4px}
+.log-entry.in{background:rgba(0,255,0,0.04)}
+.log-entry.out{background:rgba(255,255,255,0.02)}
+.notif{position:fixed;top:16px;left:16px;right:16px;max-width:448px;margin:0 auto;z-index:100;padding:12px;border-radius:12px;background:rgba(0,255,255,0.15);border:1px solid rgba(0,255,255,0.3);color:var(--cyan);backdrop-filter:blur(10px);font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px;box-shadow:0 0 20px rgba(0,255,255,0.2);animation:slideIn 0.3s ease}
+@keyframes slideIn{from{transform:translateY(-20px);opacity:0}to{transform:translateY(0);opacity:1}}
+.glow-text{text-shadow:0 0 8px currentColor}
+.login-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;position:relative}
+.login-wrap{width:100%;max-width:380px;position:relative;z-index:10}
+.login-title{text-align:center;margin-bottom:32px}
+.login-title .emoji{font-size:48px;filter:drop-shadow(0 0 20px rgba(0,255,255,0.5));margin-bottom:8px}
+.login-title h1{font-size:28px;font-weight:900;color:#fff;text-shadow:0 0 30px rgba(0,255,255,0.5),0 0 60px rgba(0,255,255,0.2)}
+.login-title p{font-size:12px;color:rgba(0,255,255,0.6);margin-top:6px}
+.login-card{padding:20px;border-radius:16px;margin-bottom:12px;cursor:pointer;transition:all 0.3s;backdrop-filter:blur(8px)}
+.login-card:active{transform:scale(0.98)}
+.login-card.employee{background:rgba(0,255,255,0.05);border:1px solid rgba(0,255,255,0.2);box-shadow:0 0 30px rgba(0,255,255,0.1)}
+.login-card.employer{background:var(--card);border:1px solid rgba(255,0,255,0.2);box-shadow:0 0 20px rgba(255,0,255,0.08);cursor:default}
+.login-card .icon-wrap{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center}
+.login-card h3{font-size:16px;font-weight:800;color:#fff}
+.login-card .sub{font-size:11px;color:var(--text3)}
+.pin-row{display:flex;gap:8px;margin-top:12px}
+.pin-row input{flex:1}
+.pin-error{font-size:11px;color:var(--red);margin-top:8px}
+.hidden{display:none!important}
+.mb8{margin-bottom:8px}.mb12{margin-bottom:12px}.mb16{margin-bottom:16px}.mt8{margin-top:8px}.mt12{margin-top:12px}
+.text-center{text-align:center}
+.text-white{color:#fff}
+.text-xs{font-size:11px}
+.fw700{font-weight:700}.fw900{font-weight:900}
+.flex1{flex:1}
+</style>
+</head>
+<body>
+
+<canvas id="lasers"></canvas>
+
+<div id="app">
+  <div id="login-screen" class="login-screen">
+    <div class="login-wrap">
+      <div class="login-title">
+        <div class="emoji">&#127968;</div>
+        <h1>HomeKeeper</h1>
+        <p>Household Management System</p>
+      </div>
+      <div class="login-card employee" onclick="enterRole('employee')">
+        <div class="row" style="gap:16px">
+          <div class="icon-wrap" style="background:rgba(0,255,255,0.15)">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0ff" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </div>
+          <div><h3>Employee</h3><p class="sub">Sign in, manage chores, request leave</p></div>
+        </div>
+      </div>
+      <div class="login-card employer">
+        <div class="row" style="gap:16px;margin-bottom:12px">
+          <div class="icon-wrap" style="background:rgba(255,0,255,0.15)">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#f0f" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          </div>
+          <div><h3>Employer</h3><p class="sub">Settings, reports, approvals</p></div>
+        </div>
+        <div class="pin-row">
+          <input type="password" id="pin-input" placeholder="Enter PIN" onkeydown="if(event.key==='Enter')employerLogin()">
+          <button class="btn sm magenta" onclick="employerLogin()">&#128274; Enter</button>
+        </div>
+        <div id="pin-error" class="pin-error hidden">Incorrect PIN. Default is 1234.</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="main-app" class="hidden" style="display:none;flex-direction:column;height:100%">
+    <div id="header" class="header worker">
+      <div id="header-icon" class="header-icon" style="background:rgba(0,255,255,0.15)">&#127968;</div>
+      <div><h1>HomeKeeper</h1><p id="header-sub" style="color:rgba(0,255,255,0.5)">Employee</p></div>
+      <button class="switch-btn" onclick="logout()">&#8617; Switch</button>
+    </div>
+    <div id="content" class="content"></div>
+    <div id="tab-bar" class="tab-bar"></div>
+  </div>
+</div>
+
+<div id="notif-container"></div>
+
+<script>
+// ===== STATE =====
+const DEFAULTS = {
+  role:null,employerPin:"1234",employerEmail:"employer@email.com",
+  workerName:"Housekeeper",monthlySalary:4500,workHoursPerDay:7,breakMinutes:30,workDaysPerWeek:5,
+  signedIn:false,signInTime:null,signOutTime:null,
+  selectedAreas:[],chores:[],completedChores:[],
+  breakages:[],photos:[],
+  calendarDays:{},leaveRequests:[],clockLog:[]
+};
+
+let S = {};
+function loadState(){
+  try{const d=localStorage.getItem('homekeeper_data');if(d){S={...DEFAULTS,...JSON.parse(d)}}else{S={...DEFAULTS}}}
+  catch(e){S={...DEFAULTS}}
+}
+function saveState(){try{localStorage.setItem('homekeeper_data',JSON.stringify(S))}catch(e){}}
+loadState();
+
+let currentTab = 'home';
+
+const AREAS = {
+  kitchen:{name:"Kitchen",icon:"\u{1F373}",chores:[{name:"Wash dishes",minutes:30},{name:"Clean countertops",minutes:15},{name:"Mop floor",minutes:20},{name:"Clean appliances",minutes:25},{name:"Empty bins",minutes:10},{name:"Clean oven",minutes:40}]},
+  lounge:{name:"Living Room",icon:"\u{1F6CB}",chores:[{name:"Vacuum carpet",minutes:25},{name:"Dust surfaces",minutes:20},{name:"Clean windows",minutes:30},{name:"Tidy cushions & throws",minutes:10},{name:"Polish furniture",minutes:20}]},
+  bedrooms:{name:"Bedrooms",icon:"\u{1F6CF}",chores:[{name:"Change bed linen",minutes:20},{name:"Make beds",minutes:10},{name:"Vacuum floors",minutes:20},{name:"Dust furniture",minutes:15},{name:"Organize closets",minutes:30}]},
+  bathrooms:{name:"Bathrooms",icon:"\u{1F6BF}",chores:[{name:"Scrub toilet",minutes:15},{name:"Clean shower/bath",minutes:25},{name:"Clean basin & mirror",minutes:15},{name:"Mop floor",minutes:15},{name:"Restock supplies",minutes:5}]},
+  laundry:{name:"Laundry",icon:"\u{1F455}",chores:[{name:"Sort & load washing",minutes:15},{name:"Hang clothes to dry",minutes:20},{name:"Iron clothes",minutes:60},{name:"Fold & store clothes",minutes:30}]},
+  outdoor:{name:"Outdoor Areas",icon:"\u{1F33F}",chores:[{name:"Sweep patio/stoep",minutes:20},{name:"Water plants",minutes:15},{name:"Clean braai area",minutes:25},{name:"Wipe outdoor furniture",minutes:15}]},
+  garage:{name:"Garage",icon:"\u{1F697}",chores:[{name:"Sweep floor",minutes:20},{name:"Organize shelves",minutes:30},{name:"Dust & wipe surfaces",minutes:15}]}
+};
+
+// ===== HELPERS =====
+function fmt(d){if(!d)return"--:--";return new Date(d).toLocaleTimeString("en-ZA",{hour:"2-digit",minute:"2-digit"})}
+function today(){return new Date().toISOString().slice(0,10)}
+function dateDisplay(d){return new Date(d+"T00:00:00").toLocaleDateString("en-ZA",{weekday:"short",day:"numeric",month:"short"})}
+function eff(){return S.workHoursPerDay*60-S.breakMinutes}
+function allocated(){return S.chores.reduce((t,c)=>t+c.minutes,0)}
+function completed(){return S.completedChores.reduce((t,id)=>{const c=S.chores.find(x=>x.id===id);return t+(c?c.minutes:0)},0)}
+function dailyRate(){return Math.round((S.monthlySalary/(S.workDaysPerWeek*4.33))*100)/100}
+function calcSalary(ms){
+  const[y,m]=ms.split("-").map(Number);const days=new Date(y,m,0).getDate();let dw=0;
+  for(let d=1;d<=days;d++){const k=`${y}-${String(m).padStart(2,"0")}-${String(d).padStart(2,"0")}`;if(S.calendarDays[k]?.worked)dw++}
+  return{daysWorked:dw,salary:Math.round(dw*dailyRate()*100)/100}
+}
+let selMonth=new Date().toISOString().slice(0,7);
+
+function notify(msg){
+  const el=document.createElement('div');el.className='notif';el.innerHTML=msg;
+  document.getElementById('notif-container').appendChild(el);
+  setTimeout(()=>el.remove(),3000);
+}
+
+function h(tag,attrs,children){
+  if(typeof attrs==='string'||Array.isArray(attrs)){children=attrs;attrs={}}
+  let s=`<${tag}`;
+  for(const[k,v]of Object.entries(attrs||{})){if(k==='style'&&typeof v==='object'){s+=` style="${Object.entries(v).map(([a,b])=>`${a.replace(/[A-Z]/g,m=>'-'+m.toLowerCase())}:${b}`).join(';')}"`}else if(k.startsWith('on')){}else{s+=` ${k}="${v}"`}}
+  s+=`>`;if(Array.isArray(children))s+=children.join('');else if(children)s+=children;
+  if(!['input','br','img','hr'].includes(tag))s+=`</${tag}>`;return s;
+}
+
+// ===== LASER CANVAS =====
+(function initLasers(){
+  const cv=document.getElementById('lasers'),ctx=cv.getContext('2d');
+  function resize(){cv.width=window.innerWidth;cv.height=window.innerHeight}
+  resize();window.addEventListener('resize',resize);
+  const beams=Array.from({length:8},()=>({x:Math.random()*cv.width,y:Math.random()*cv.height,vx:(Math.random()-0.5)*2,vy:(Math.random()-0.5)*2,hue:Math.random()*360,len:120+Math.random()*200}));
+  function draw(){
+    ctx.fillStyle="rgba(8,8,18,0.15)";ctx.fillRect(0,0,cv.width,cv.height);
+    beams.forEach(b=>{b.x+=b.vx;b.y+=b.vy;b.hue=(b.hue+0.5)%360;
+      if(b.x<0||b.x>cv.width)b.vx*=-1;if(b.y<0||b.y>cv.height)b.vy*=-1;
+      const a=Math.atan2(b.vy,b.vx),g=ctx.createLinearGradient(b.x,b.y,b.x+Math.cos(a)*b.len,b.y+Math.sin(a)*b.len);
+      g.addColorStop(0,`hsla(${b.hue},100%,70%,0.8)`);g.addColorStop(1,`hsla(${b.hue},100%,50%,0)`);
+      ctx.strokeStyle=g;ctx.lineWidth=1.5;ctx.shadowBlur=12;ctx.shadowColor=`hsla(${b.hue},100%,60%,0.6)`;
+      ctx.beginPath();ctx.moveTo(b.x,b.y);ctx.lineTo(b.x+Math.cos(a)*b.len,b.y+Math.sin(a)*b.len);ctx.stroke();ctx.shadowBlur=0;
+    });requestAnimationFrame(draw);}
+  draw();
+})();
+
+// ===== NAVIGATION =====
+function enterRole(role){
+  S.role=role;saveState();showApp();
+}
+function employerLogin(){
+  const pin=document.getElementById('pin-input').value;
+  if(pin===S.employerPin){S.role='employer';saveState();showApp()}
+  else{document.getElementById('pin-error').classList.remove('hidden')}
+}
+function logout(){
+  S.role=null;saveState();currentTab='home';
+  document.getElementById('login-screen').style.display='flex';
+  document.getElementById('main-app').style.display='none';
+  document.getElementById('pin-input').value='';
+  document.getElementById('pin-error').classList.add('hidden');
+}
+
+function showApp(){
+  document.getElementById('login-screen').style.display='none';
+  const ma=document.getElementById('main-app');ma.classList.remove('hidden');ma.style.display='flex';
+  const hdr=document.getElementById('header');
+  const hdrIcon=document.getElementById('header-icon');
+  const hdrSub=document.getElementById('header-sub');
+  if(S.role==='employer'){
+    hdr.className='header emp';hdrIcon.style.background='rgba(255,0,255,0.15)';hdrIcon.innerHTML='&#128274;';
+    hdrSub.style.color='rgba(255,0,255,0.5)';hdrSub.textContent='Employer Panel';
+    currentTab='dashboard';
+  }else{
+    hdr.className='header worker';hdrIcon.style.background='rgba(0,255,255,0.15)';hdrIcon.innerHTML='&#127968;';
+    hdrSub.style.color='rgba(0,255,255,0.5)';hdrSub.textContent=S.workerName;
+    currentTab='home';
+  }
+  renderTabs();render();
+}
+
+const empTabs=[
+  {id:'home',label:'Home',icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>'},
+  {id:'chores',label:'Chores',icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 12l2 2 4-4"/></svg>'},
+  {id:'photos',label:'Photos',icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>'},
+  {id:'breakages',label:'Breaks',icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>'},
+  {id:'leave',label:'Leave',icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78z"/></svg>'},
+  {id:'salary',label:'Pay',icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>'}
+];
+const emplerTabs=[
+  {id:'dashboard',label:'Dash',icon:empTabs[0].icon},
+  {id:'settings',label:'Settings',icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>'},
+  {id:'calendar',label:'Calendar',icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>'},
+  {id:'clocklog',label:'Log',icon:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>'},
+  {id:'emp_breakages',label:'Breaks',icon:empTabs[3].icon},
+  {id:'emp_leave',label:'Leave',icon:empTabs[4].icon}
+];
+
+function renderTabs(){
+  const tabs=S.role==='employer'?emplerTabs:empTabs;
+  const accent=S.role==='employer'?'#f0f':'#0ff';
+  const pL=S.leaveRequests.filter(l=>l.status==='pending').length;
+  const pB=S.breakages.filter(b=>b.status==='pending').length;
+  let html='';
+  tabs.forEach(t=>{
+    const active=currentTab===t.id;
+    const pending=t.id==='emp_leave'?pL:t.id==='emp_breakages'?pB:0;
+    html+=`<button class="tab-btn${active?' active':''}" onclick="switchTab('${t.id}')" style="color:${active?accent:'rgba(255,255,255,0.3)'}">
+      ${t.icon}
+      <span>${t.label}</span>
+      ${pending>0?`<div class="tab-badge">${pending}</div>`:''}
+    </button>`;
+  });
+  document.getElementById('tab-bar').innerHTML=html;
+  document.getElementById('tab-bar').style.borderTop=`1px solid ${S.role==='employer'?'rgba(255,0,255,0.1)':'rgba(0,255,255,0.1)'}`;
+}
+
+function switchTab(id){currentTab=id;renderTabs();render()}
+
+// ===== ACTIONS =====
+function toggleArea(key){
+  const i=S.selectedAreas.indexOf(key);
+  if(i>-1){S.selectedAreas.splice(i,1);S.chores=S.chores.filter(c=>c.area!==key);S.completedChores=S.completedChores.filter(id=>!S.chores.find(c=>c.id===id&&c.area===key));}
+  else{S.selectedAreas.push(key);const nc=AREAS[key].chores.map((ch,j)=>({...ch,id:`${key}-${j}`,area:key}));S.chores.push(...nc);}
+  saveState();render();
+}
+function toggleChore(id){const i=S.completedChores.indexOf(id);if(i>-1)S.completedChores.splice(i,1);else S.completedChores.push(id);saveState();render();}
+function removeChore(id){S.chores=S.chores.filter(c=>c.id!==id);S.completedChores=S.completedChores.filter(x=>x!==id);saveState();render();}
+function saveChoreTime(id){
+  const inp=document.getElementById('edit-time-'+id);if(!inp)return;
+  const v=Math.max(5,parseInt(inp.value)||15);
+  const ch=S.chores.find(c=>c.id===id);if(ch)ch.minutes=v;
+  saveState();render();
+}
+function addAdhocChore(){
+  const name=document.getElementById('adhoc-name').value.trim();
+  const mins=parseInt(document.getElementById('adhoc-mins').value)||15;
+  if(!name)return;
+  S.chores.push({name,minutes:mins,id:'adhoc-'+Date.now(),area:S.selectedAreas[0]||'general',adhoc:true});
+  saveState();render();
+}
+function signIn(){
+  const now=new Date();S.signedIn=true;S.signInTime=now.toISOString();S.signOutTime=null;
+  S.completedChores=[];S.breakages=[];S.photos=[];
+  S.clockLog.push({type:'in',time:now.toISOString(),date:today()});
+  saveState();notify('Signed in successfully!');render();renderTabs();
+}
+function signOut(){
+  const now=new Date();
+  const hrs=S.signInTime?Math.min(Math.round(((now-new Date(S.signInTime))/3600000)*100)/100,S.workHoursPerDay):0;
+  const dk=today();
+  S.signedIn=false;S.signOutTime=now.toISOString();
+  S.calendarDays[dk]={worked:true,signIn:fmt(S.signInTime),signOut:fmt(now.toISOString()),hoursWorked:hrs,choresCompleted:S.completedChores.length,totalChores:S.chores.length,breakagesCount:S.breakages.length};
+  S.clockLog.push({type:'out',time:now.toISOString(),date:dk});
+  saveState();notify('Signed out. Great work today!');render();renderTabs();
+}
+function addBreakage(){
+  const text=document.getElementById('breakage-text').value.trim();if(!text)return;
+  S.breakages.push({id:Date.now(),text,photos:[],date:new Date().toLocaleString("en-ZA"),status:'pending'});
+  saveState();notify('Breakage logged.');render();renderTabs();
+}
+function ackBreakage(id){const b=S.breakages.find(x=>x.id===id);if(b)b.status='acknowledged';saveState();render();renderTabs();}
+function handleWorkPhoto(input){
+  Array.from(input.files).forEach(f=>{const r=new FileReader();r.onload=e=>{S.photos.push({id:Date.now(),src:e.target.result,date:new Date().toLocaleString("en-ZA")});saveState();render()};r.readAsDataURL(f)});
+}
+function delPhoto(id){S.photos=S.photos.filter(p=>p.id!==id);saveState();render();}
+function submitLeave(){
+  const type=document.querySelector('.leave-type-btn.sel')?.dataset.type||'sick';
+  const date=document.getElementById('leave-date').value;
+  const note=document.getElementById('leave-note').value;
+  if(!date)return;
+  S.leaveRequests.push({id:Date.now(),type,date,note,status:'pending',submitted:new Date().toISOString()});
+  saveState();notify('Leave request submitted!');render();renderTabs();
+}
+function selectLeaveType(t){document.querySelectorAll('.leave-type-btn').forEach(b=>{b.classList.toggle('sel',b.dataset.type===t)})}
+function approveLeave(id){const l=S.leaveRequests.find(x=>x.id===id);if(l)l.status='approved';saveState();render();renderTabs();}
+function declineLeave(id){const l=S.leaveRequests.find(x=>x.id===id);if(l)l.status='declined';saveState();render();renderTabs();}
+function toggleWorkDay(dk){
+  if(S.calendarDays[dk]?.worked){delete S.calendarDays[dk]}
+  else{S.calendarDays[dk]={worked:true,signIn:"08:00",signOut:`${String(8+S.workHoursPerDay).padStart(2,"0")}:00`,hoursWorked:S.workHoursPerDay}}
+  saveState();render();
+}
+function changeMonth(dir){
+  const[y,m]=selMonth.split("-").map(Number);const d=new Date(y,m-1+dir,1);
+  selMonth=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`;render();
+}
+function saveSetting(key,el,isNum){S[key]=isNum?Number(el.value):el.value;saveState();if(key==='workerName')document.getElementById('header-sub').textContent=S.workerName;}
+function saveChoreDefault(area,idx,el){
+  if(!AREAS[area])return;AREAS[area].chores[idx].minutes=Math.max(5,parseInt(el.value)||15);
+}
+
+// ===== PROGRESS BAR HTML =====
+function progressHTML(val,max,label,color){
+  const pct=Math.min((val/max)*100,100);
+  const c=pct>90?'#f00':pct>70?'#ff0':color||'#0ff';
+  return `<div class="progress-wrap"><div class="progress-label"><span style="color:var(--text2)">${label}</span><span style="color:${c}">${val}/${max} min</span></div><div class="progress-bar"><div class="progress-fill" style="width:${pct}%;background:${c};box-shadow:0 0 10px ${c}80"></div></div></div>`;
+}
+
+// ===== RENDER =====
+function render(){
+  const el=document.getElementById('content');
+  const views={home:vHome,chores:vChores,photos:vPhotos,breakages:vBreakages,leave:vLeave,salary:vSalary,
+    dashboard:vDashboard,settings:vSettings,calendar:vCalendar,clocklog:vClockLog,emp_breakages:vEmpBreakages,emp_leave:vEmpLeave};
+  el.innerHTML=(views[currentTab]||views.home)();
+  el.scrollTop=0;
+}
+
+// ===== EMPLOYEE VIEWS =====
+function vHome(){
+  const todayStr=new Date().toLocaleDateString("en-ZA",{weekday:"long",year:"numeric",month:"long",day:"numeric"});
+  let html=`<div class="card glow-cyan"><div class="text-center"><div style="font-size:40px;filter:drop-shadow(0 0 15px rgba(0,255,255,0.4))">&#127968;</div><h2 class="text-white" style="font-size:20px;font-weight:900;margin:8px 0">Welcome, <span class="glow-text" style="color:#0ff">${S.workerName}</span></h2><p style="font-size:12px;color:var(--text2)">${todayStr}</p><p style="font-size:11px;color:rgba(0,255,255,0.5);margin-top:4px">${S.workHoursPerDay}h work day (${S.breakMinutes}min break)</p>`;
+  if(S.signedIn&&S.signInTime)html+=`<p style="font-size:11px;color:#0f0;text-shadow:0 0 8px #0f0;margin-top:8px">Signed in at ${fmt(S.signInTime)}</p>`;
+  html+=`</div></div>`;
+
+  html+=`<div class="card"><div class="label cyan">Clock In / Out</div>`;
+  if(!S.signedIn){
+    html+=`<button class="btn cyan full" onclick="signIn()">&#x1F4F2; Sign In to Work</button>`;
+    if(S.signOutTime)html+=`<p style="text-align:center;font-size:10px;color:var(--text3);margin-top:10px">Last signed out: ${fmt(S.signOutTime)}</p>`;
+  }else{
+    html+=`<div class="row" style="padding:10px;border-radius:12px;background:rgba(0,255,0,0.08);border:1px solid rgba(0,255,0,0.2);gap:8px;margin-bottom:10px"><div style="width:10px;height:10px;border-radius:50%;background:#0f0;box-shadow:0 0 10px #0f0;animation:pulse 2s infinite"></div><span style="font-size:13px;color:#0f0;font-weight:600">Working since ${fmt(S.signInTime)}</span></div>`;
+    html+=`<button class="btn red full" onclick="signOut()">&#128721; Sign Out</button>`;
+  }
+  html+=`</div>`;
+
+  html+=`<div class="card"><div class="label cyan">Work Areas</div><div class="grid2">`;
+  Object.entries(AREAS).forEach(([k,a])=>{
+    const sel=S.selectedAreas.includes(k);
+    html+=`<div class="area-btn${sel?' sel':''}" onclick="toggleArea('${k}')"><div class="icon">${a.icon}</div><div class="name">${a.name}</div><div class="count">${a.chores.length} chores</div></div>`;
+  });
+  html+=`</div></div>`;
+
+  if(S.selectedAreas.length>0){
+    html+=`<div class="card">${progressHTML(allocated(),eff(),'Time budget ('+eff()+' min)')}`;
+    if(allocated()>eff())html+=`<div style="margin-top:8px;padding:8px;border-radius:8px;background:rgba(255,0,0,0.08);border:1px solid rgba(255,0,0,0.2);font-size:11px;color:#f66">&#9888; Over-allocated by ${allocated()-eff()} min</div>`;
+    html+=`<div style="margin-top:8px">${progressHTML(completed(),allocated()||1,'Completed','#0f0')}</div></div>`;
+  }
+
+  html+=`<div class="card glow-lime"><div class="label lime">Today's Pay</div><div class="text-center" style="padding:16px;border-radius:12px;background:rgba(0,255,0,0.05)"><div style="font-size:28px;font-weight:900;color:#0f0;text-shadow:0 0 20px rgba(0,255,0,0.4)">R${dailyRate().toFixed(2)}</div><div style="font-size:10px;color:var(--text2);margin-top:4px">Daily rate</div></div></div>`;
+  return html;
+}
+
+function vChores(){
+  if(S.selectedAreas.length===0)return`<div class="card"><p style="text-align:center;color:var(--text3);padding:32px 0;font-size:13px">Select work areas on Home tab first.</p></div>`;
+  let html=`<div class="card">${progressHTML(allocated(),eff(),'Time ('+eff()+' min)')}</div>`;
+  S.selectedAreas.forEach(ak=>{
+    const area=AREAS[ak];const ac=S.chores.filter(c=>c.area===ak);
+    html+=`<div class="card"><h3 style="color:#fff;font-size:14px;font-weight:700;margin-bottom:12px">${area.icon} ${area.name}</h3>`;
+    ac.forEach(ch=>{
+      const done=S.completedChores.includes(ch.id);
+      html+=`<div class="chore-item ${done?'done':'undone'}"><div class="chk${done?' checked':''}" onclick="toggleChore('${ch.id}')">${done?'&#10003;':''}</div><span class="chore-name${done?' done':''}">${ch.name}</span>`;
+      html+=`<span class="chore-time" onclick="this.style.display='none';this.nextElementSibling.style.display='flex'">&#128339; ${ch.minutes}m &#9998;</span>`;
+      html+=`<span class="time-edit" style="display:none"><input type="number" id="edit-time-${ch.id}" value="${ch.minutes}" min="5" step="5"><button onclick="saveChoreTime('${ch.id}')" style="color:#0f0">&#10003;</button><button onclick="this.parentElement.style.display='none';this.parentElement.previousElementSibling.style.display='flex'" style="color:var(--text3)">&#10005;</button></span>`;
+      if(ch.adhoc)html+=`<button style="background:none;border:none;color:rgba(255,0,0,0.5);cursor:pointer;font-size:16px" onclick="removeChore('${ch.id}')">&#128465;</button>`;
+      html+=`</div>`;
+    });
+    html+=`</div>`;
+  });
+  html+=`<div class="card"><div class="label cyan">Add Ad-Hoc Chore</div><input id="adhoc-name" placeholder="Chore description..." style="margin-bottom:8px"><div class="row"><span style="font-size:11px;color:var(--text2);white-space:nowrap">Min:</span><input id="adhoc-mins" type="number" value="15" min="5" step="5" style="width:70px"><button class="btn cyan sm" onclick="addAdhocChore()" ${allocated()+15>eff()?'disabled':''}>+ Add</button></div></div>`;
+  return html;
+}
+
+function vPhotos(){
+  let html=`<div class="card"><div class="label cyan">Work Photos</div><label class="upload-zone">&#128247; Upload Photo<input type="file" accept="image/*" multiple style="display:none" onchange="handleWorkPhoto(this)"></label></div>`;
+  if(S.photos.length>0){
+    html+=`<div class="card"><div class="photo-grid">`;
+    S.photos.forEach(p=>{html+=`<div class="photo-thumb"><img src="${p.src}"><div class="date">${p.date}</div><button class="del" onclick="delPhoto(${p.id})">&#10005;</button></div>`});
+    html+=`</div></div>`;
+  }
+  return html;
+}
+
+function vBreakages(){
+  let html=`<div class="card"><div class="label amber">Log a Breakage</div><input id="breakage-text" placeholder="Describe what was broken..." style="margin-bottom:10px"><button class="btn amber full" onclick="addBreakage()">&#9888; Log Breakage</button></div>`;
+  if(S.breakages.length>0){
+    html+=`<div class="card"><div class="label amber">Your Reports</div>`;
+    S.breakages.forEach(b=>{
+      html+=`<div style="padding:12px;border-radius:12px;background:rgba(255,180,0,0.05);border:1px solid rgba(255,180,0,0.15);margin-bottom:8px"><div class="row between"><span class="text-white fw700" style="font-size:13px">${b.text}</span><span class="status-badge badge-${b.status}">${b.status}</span></div><p style="font-size:10px;color:var(--text3);margin-top:4px">${b.date}</p></div>`;
+    });
+    html+=`</div>`;
+  }
+  return html;
+}
+
+function vLeave(){
+  let html=`<div class="card glow-magenta"><div class="label magenta">Request Leave / Report Sick</div><div class="row" style="margin-bottom:10px">`;
+  [['sick','\u{1F912} Sick'],['leave','\u{1F3D6} Leave'],['family','\u{1F468}\u{200D}\u{1F469}\u{200D}\u{1F467} Family']].forEach(([t,l])=>{
+    html+=`<div class="leave-type-btn${t==='sick'?' sel':''}" data-type="${t}" onclick="selectLeaveType('${t}')">${l}</div>`;
+  });
+  html+=`</div><div style="margin-bottom:8px"><label style="font-size:10px;color:var(--text2)">Date</label><input type="date" id="leave-date" value="${today()}"></div>`;
+  html+=`<div style="margin-bottom:10px"><label style="font-size:10px;color:var(--text2)">Note (optional)</label><textarea id="leave-note" rows="2" placeholder="Any details..."></textarea></div>`;
+  html+=`<button class="btn magenta full" onclick="submitLeave()">&#10084; Submit Request</button></div>`;
+  if(S.leaveRequests.length>0){
+    html+=`<div class="card"><div class="label magenta">Your Requests</div>`;
+    S.leaveRequests.slice().reverse().forEach(l=>{
+      const ico=l.type==='sick'?'\u{1F912}':l.type==='leave'?'\u{1F3D6}':'\u{1F468}\u{200D}\u{1F469}\u{200D}\u{1F467}';
+      html+=`<div style="padding:10px;border-radius:12px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);margin-bottom:6px" class="row between"><div><span class="text-white fw700" style="font-size:13px">${ico} ${dateDisplay(l.date)}</span>${l.note?`<p style="font-size:10px;color:var(--text3);margin-top:2px">${l.note}</p>`:''}</div><span class="status-badge badge-${l.status}">${l.status}</span></div>`;
+    });
+    html+=`</div>`;
+  }
+  return html;
+}
+
+function vSalary(){
+  const sal=calcSalary(selMonth);
+  const[y,m]=selMonth.split("-").map(Number);
+  const mn=new Date(y,m-1).toLocaleDateString("en-ZA",{month:"long",year:"numeric"});
+  let html=`<div class="card glow-lime"><div class="text-center" style="margin-bottom:16px"><div style="font-size:32px;color:#0f0;filter:drop-shadow(0 0 10px rgba(0,255,0,0.5))">&#128176;</div><h3 class="text-white" style="font-size:20px;font-weight:900;margin-top:8px">Pay Summary</h3></div>`;
+  html+=`<div class="row between" style="margin-bottom:16px"><button class="btn sm cyan" onclick="changeMonth(-1)">&#9664;</button><span style="color:#0ff;font-weight:700">${mn}</span><button class="btn sm cyan" onclick="changeMonth(1)">&#9654;</button></div>`;
+  html+=`<div style="font-size:13px">`;
+  html+=`<div class="row between" style="padding:10px;border-radius:12px;background:rgba(255,255,255,0.03);margin-bottom:6px"><span style="color:var(--text2)">Daily Rate</span><span style="color:#0ff;font-weight:700">R${dailyRate().toFixed(2)}</span></div>`;
+  html+=`<div class="row between" style="padding:10px;border-radius:12px;background:rgba(255,255,255,0.03);margin-bottom:6px"><span style="color:var(--text2)">Days Worked</span><span class="text-white fw700">${sal.daysWorked}</span></div>`;
+  html+=`<div class="row between" style="padding:12px;border-radius:12px;background:rgba(0,255,0,0.08);border:1px solid rgba(0,255,0,0.2)"><span style="color:#0f0;font-weight:600">Earned</span><span style="color:#0f0;font-weight:900;font-size:20px;text-shadow:0 0 10px rgba(0,255,0,0.4)">R${sal.salary.toFixed(2)}</span></div>`;
+  html+=`</div></div>`;
+  return html;
+}
+
+// ===== EMPLOYER VIEWS =====
+function vDashboard(){
+  const sal=calcSalary(selMonth);
+  const pL=S.leaveRequests.filter(l=>l.status==='pending').length;
+  const pB=S.breakages.filter(b=>b.status==='pending').length;
+  let html=`<div class="card glow-magenta"><div class="row" style="gap:12px"><div style="width:40px;height:40px;border-radius:12px;background:rgba(255,0,255,0.15);display:flex;align-items:center;justify-content:center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f0f" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div><div><h2 class="text-white" style="font-size:18px;font-weight:800">Employer Dashboard</h2><p style="font-size:11px;color:var(--text2)">${S.workerName}'s management</p></div></div></div>`;
+  const stats=[
+    {val:`R${S.monthlySalary}`,lbl:'Monthly Salary',c:'#0f0'},{val:sal.daysWorked,lbl:'Days This Month',c:'#0ff'},
+    {val:pL,lbl:'Pending Leave',c:'#fb0',tab:'emp_leave'},{val:pB,lbl:'Pending Breakages',c:'#f55',tab:'emp_breakages'}
+  ];
+  html+=`<div class="grid2">`;
+  stats.forEach(s=>{html+=`<div class="card${s.tab?' " onclick="switchTab(\''+s.tab+'\')" style="cursor:pointer':''}" ><div class="stat-box"><div class="val" style="color:${s.c};text-shadow:0 0 12px ${s.c}60">${s.val}</div><div class="lbl">${s.lbl}</div></div></div>`});
+  html+=`</div>`;
+  if(S.signedIn){
+    html+=`<div class="card glow-lime"><div class="row" style="padding:8px;border-radius:12px;background:rgba(0,255,0,0.06);gap:8px"><div style="width:10px;height:10px;border-radius:50%;background:#0f0;box-shadow:0 0 10px #0f0"></div><span style="font-size:13px;color:#0f0;font-weight:600">${S.workerName} signed in since ${fmt(S.signInTime)}</span></div></div>`;
+  }
+  const recent=S.clockLog.slice(-10).reverse();
+  html+=`<div class="card"><div class="label magenta">Recent Clock Entries</div>`;
+  if(recent.length===0)html+=`<p style="text-align:center;color:var(--text3);font-size:11px;padding:16px">No entries yet.</p>`;
+  else recent.forEach(c=>{
+    html+=`<div class="log-entry ${c.type}"><span style="color:${c.type==='in'?'#0f0':'var(--text3)'}">${c.type==='in'?'&#10148; Sign In':'&#10094; Sign Out'}</span><span class="flex1"></span><span style="color:var(--text3)">${c.date} ${fmt(c.time)}</span></div>`;
+  });
+  html+=`</div>`;
+  return html;
+}
+
+function vSettings(){
+  let html=`<div class="card"><div class="label magenta">Employee Settings</div>`;
+  const fields=[
+    {key:'workerName',label:'Worker Name',type:'text'},
+    {key:'monthlySalary',label:'Monthly Salary (ZAR)',type:'number',note:`Employee sees daily rate: R${dailyRate().toFixed(2)}/day`},
+    {key:'workHoursPerDay',label:'Work Hours Per Day',type:'number'},
+    {key:'breakMinutes',label:'Break Time (minutes)',type:'number'},
+    {key:'workDaysPerWeek',label:'Work Days Per Week',type:'number'}
+  ];
+  fields.forEach(f=>{
+    const isNum=f.type==='number';
+    html+=`<div style="margin-bottom:12px"><label style="font-size:10px;color:var(--text2)">${f.label}</label><input type="${f.type}" value="${S[f.key]}" onchange="saveSetting('${f.key}',this,${isNum})">`;
+    if(f.note)html+=`<p style="font-size:10px;color:rgba(0,255,255,0.4);margin-top:4px">${f.note}</p>`;
+    html+=`</div>`;
+  });
+  html+=`</div>`;
+
+  html+=`<div class="card"><div class="label magenta">Security</div>`;
+  html+=`<div style="margin-bottom:12px"><label style="font-size:10px;color:var(--text2)">Employer PIN</label><input value="${S.employerPin}" onchange="saveSetting('employerPin',this,false)"></div>`;
+  html+=`<div style="margin-bottom:12px"><label style="font-size:10px;color:var(--text2)">Notification Email</label><input type="email" value="${S.employerEmail}" onchange="saveSetting('employerEmail',this,false)"><p style="font-size:10px;color:rgba(255,180,0,0.4);margin-top:4px">Breakage alerts will be sent here</p></div>`;
+  html+=`</div>`;
+
+  html+=`<div class="card"><div class="label magenta">Manage Default Chore Times</div>`;
+  Object.entries(AREAS).forEach(([k,a])=>{
+    html+=`<h4 style="color:#fff;font-size:13px;font-weight:700;margin:12px 0 8px">${a.icon} ${a.name}</h4>`;
+    a.chores.forEach((ch,i)=>{
+      html+=`<div class="row" style="margin-bottom:4px;font-size:11px"><span class="flex1" style="color:var(--text2)">${ch.name}</span><input type="number" min="5" step="5" value="${ch.minutes}" style="width:60px;padding:4px;text-align:center;font-size:11px;border-radius:8px;background:var(--input-bg);border:1px solid var(--input-border);color:#0ff" onchange="saveChoreDefault('${k}',${i},this)"><span style="color:var(--text3);margin-left:4px">min</span></div>`;
+    });
+  });
+  html+=`</div>`;
+  return html;
+}
+
+function vCalendar(){
+  const[y,m]=selMonth.split("-").map(Number);
+  const daysInMonth=new Date(y,m,0).getDate();
+  const firstDay=new Date(y,m-1,1).getDay();
+  const mn=new Date(y,m-1).toLocaleDateString("en-ZA",{month:"long",year:"numeric"});
+  let html=`<div class="card"><div class="row between" style="margin-bottom:16px"><button class="btn sm magenta" onclick="changeMonth(-1)">&#9664;</button><span style="color:#f0f;font-weight:700">${mn}</span><button class="btn sm magenta" onclick="changeMonth(1)">&#9654;</button></div>`;
+  html+=`<div class="grid7">`;
+  ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].forEach(d=>{html+=`<div class="cal-hdr">${d}</div>`});
+  for(let i=0;i<firstDay;i++)html+=`<div></div>`;
+  for(let d=1;d<=daysInMonth;d++){
+    const k=`${y}-${String(m).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+    const w=S.calendarDays[k]?.worked;const isT=k===today();
+    const leave=S.leaveRequests.find(l=>l.date===k&&l.status==='approved');
+    let cls='cal-day';if(w)cls+=' worked';else if(leave)cls+=' leave';else cls+=' normal';if(isT)cls+=' today';
+    html+=`<div class="${cls}" onclick="toggleWorkDay('${k}')">${d}${w?'<div style="width:4px;height:4px;border-radius:50%;background:#0f0"></div>':''}</div>`;
+  }
+  html+=`</div><p style="text-align:center;font-size:10px;color:var(--text3);margin-top:12px">Tap to toggle | Green = worked | Yellow = leave</p></div>`;
+
+  const sal=calcSalary(selMonth);
+  html+=`<div class="card"><div class="grid2"><div class="stat-box" style="background:rgba(0,255,0,0.06);border:1px solid rgba(0,255,0,0.15);border-radius:12px"><div class="val" style="color:#0f0">${sal.daysWorked}</div><div class="lbl">Days Worked</div></div><div class="stat-box" style="background:rgba(255,0,255,0.06);border:1px solid rgba(255,0,255,0.15);border-radius:12px"><div class="val" style="color:#f0f">R${sal.salary.toFixed(2)}</div><div class="lbl">Salary Owed</div></div></div></div>`;
+  return html;
+}
+
+function vClockLog(){
+  let html=`<div class="card"><div class="label magenta">Full Clock Log</div>`;
+  if(S.clockLog.length===0)html+=`<p style="text-align:center;color:var(--text3);font-size:11px;padding:32px">No entries yet.</p>`;
+  else S.clockLog.slice().reverse().forEach(c=>{
+    html+=`<div class="log-entry ${c.type}" style="border:1px solid ${c.type==='in'?'rgba(0,255,0,0.1)':'rgba(255,255,255,0.04)'}"><span style="color:${c.type==='in'?'#0f0':'var(--text3)'};font-weight:600">${c.type==='in'?'&#10148; Sign In':'&#10094; Sign Out'}</span><span class="flex1"></span><span style="color:var(--text3)">${c.date} at ${fmt(c.time)}</span></div>`;
+  });
+  html+=`</div>`;
+
+  html+=`<div class="card"><div class="label magenta">Daily Records</div>`;
+  const records=Object.entries(S.calendarDays).sort().reverse();
+  if(records.length===0)html+=`<p style="text-align:center;color:var(--text3);font-size:11px;padding:16px">No records.</p>`;
+  else records.forEach(([k,v])=>{
+    html+=`<div style="padding:10px;border-radius:12px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);margin-bottom:6px;font-size:11px"><div class="row between"><span class="text-white fw700">${dateDisplay(k)}</span><span style="color:#0f0">${v.hoursWorked}h</span></div><div style="color:var(--text3);margin-top:4px">${v.signIn} - ${v.signOut}${v.choresCompleted!=null?` | ${v.choresCompleted}/${v.totalChores} chores`:''}</div></div>`;
+  });
+  html+=`</div>`;
+  return html;
+}
+
+function vEmpBreakages(){
+  let html=`<div class="card"><div class="label amber">Breakage Reports</div>`;
+  if(S.breakages.length===0)html+=`<p style="text-align:center;color:var(--text3);font-size:11px;padding:32px">No breakages.</p>`;
+  else S.breakages.slice().reverse().forEach(b=>{
+    html+=`<div style="padding:12px;border-radius:12px;background:${b.status==='pending'?'rgba(255,180,0,0.05)':'rgba(255,255,255,0.02)'};border:1px solid ${b.status==='pending'?'rgba(255,180,0,0.2)':'rgba(255,255,255,0.06)'};margin-bottom:8px"><div class="row between"><span class="text-white fw700" style="font-size:13px">${b.text}</span><span class="status-badge badge-${b.status}">${b.status}</span></div><p style="font-size:10px;color:var(--text3);margin-top:4px">${b.date}</p>`;
+    if(b.status==='pending')html+=`<div style="margin-top:10px"><button class="btn cyan sm" onclick="ackBreakage(${b.id})">&#10003; Acknowledge</button></div>`;
+    html+=`</div>`;
+  });
+  html+=`</div>`;
+  return html;
+}
+
+function vEmpLeave(){
+  let html=`<div class="card"><div class="label magenta">Leave Requests</div>`;
+  if(S.leaveRequests.length===0)html+=`<p style="text-align:center;color:var(--text3);font-size:11px;padding:32px">No requests.</p>`;
+  else S.leaveRequests.slice().reverse().forEach(l=>{
+    const ico=l.type==='sick'?'\u{1F912} Sick':l.type==='leave'?'\u{1F3D6} Leave':'\u{1F468}\u{200D}\u{1F469}\u{200D}\u{1F467} Family';
+    html+=`<div style="padding:12px;border-radius:12px;background:${l.status==='pending'?'rgba(255,180,0,0.05)':l.status==='approved'?'rgba(0,255,0,0.04)':'rgba(255,0,0,0.04)'};border:1px solid ${l.status==='pending'?'rgba(255,180,0,0.2)':l.status==='approved'?'rgba(0,255,0,0.15)':'rgba(255,0,0,0.15)'};margin-bottom:8px"><div class="row between"><div><span class="text-white fw700" style="font-size:13px">${ico}</span><p style="font-size:11px;color:var(--text2);margin-top:2px">${dateDisplay(l.date)}</p>${l.note?`<p style="font-size:10px;color:var(--text3);margin-top:2px">${l.note}</p>`:''}</div><span class="status-badge badge-${l.status}">${l.status}</span></div>`;
+    if(l.status==='pending')html+=`<div class="row" style="margin-top:10px;gap:8px"><button class="btn cyan sm" onclick="approveLeave(${l.id})">&#10003; Approve</button><button class="btn red sm" onclick="declineLeave(${l.id})">&#10005; Decline</button></div>`;
+    html+=`</div>`;
+  });
+  html+=`</div>`;
+  return html;
+}
+
+// ===== INIT =====
+if(S.role){showApp()}
+
+// Pulse animation
+const style=document.createElement('style');
+style.textContent='@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}';
+document.head.appendChild(style);
+</script>
+</body>
+</html>
