@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#080812">
+<title>HomeKeeper</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#080812;--card:rgba(15,15,30,0.75);--border:rgba(255,255,255,0.08);--text:#e0e0e0;--text2:rgba(255,255,255,0.5);--text3:rgba(255,255,255,0.3);--cyan:#0ff;--magenta:#f0f;--lime:#0f0;--amber:#fb0;--red:#f55;--input-bg:rgba(255,255,255,0.06);--input-border:rgba(255,255,255,0.1)}
+html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:linear-gradient(180deg,#080812 0%,#0a0a1a 50%,#0d0815 100%);color:var(--text);-webkit-tap-highlight-color:transparent}
+#app{max-width:480px;margin:0 auto;height:100%;display:flex;flex-direction:column;position:relative;overflow:hidden}
+canvas#lasers{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;opacity:0.35;z-index:0}
+.header{padding:12px 20px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:20;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);background:rgba(8,8,18,0.85)}
+.header.emp{border-bottom:1px solid rgba(255,0,255,0.15)}.header.worker{border-bottom:1px solid rgba(0,255,255,0.15)}
+.header-icon{width:36px;height:36px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:18px}
+.header h1{font-size:16px;font-weight:800;color:#fff}.header p{font-size:11px}
+.switch-btn{margin-left:auto;font-size:11px;color:rgba(255,255,255,0.4);background:rgba(255,255,255,0.05);border:none;padding:4px 8px;border-radius:8px;cursor:pointer}
+.content{flex:1;overflow-y:auto;padding:20px 16px 100px;position:relative;z-index:10;-webkit-overflow-scrolling:touch}.content::-webkit-scrollbar{display:none}
+.tab-bar{position:fixed;bottom:0;left:0;right:0;max-width:480px;margin:0 auto;z-index:20;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);background:rgba(8,8,18,0.92);display:flex;justify-content:space-around;padding:8px 0;padding-bottom:max(8px,env(safe-area-inset-bottom))}
+.tab-btn{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 6px;border-radius:12px;border:none;background:none;cursor:pointer;position:relative;transition:all 0.2s}
+.tab-btn svg{width:17px;height:17px;stroke-width:1.5}.tab-btn.active svg{stroke-width:2.5}
+.tab-btn span{font-size:9px;font-weight:600}
+.tab-badge{position:absolute;top:-2px;right:-2px;width:16px;height:16px;border-radius:50%;background:#f00;color:#fff;font-size:9px;display:flex;align-items:center;justify-content:center;box-shadow:0 0 8px rgba(255,0,0,0.5)}
+.card{border-radius:16px;padding:20px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);background:var(--card);border:1px solid var(--border);margin-bottom:16px}
+.card.gc{border-color:rgba(0,255,255,0.2);box-shadow:0 0 20px rgba(0,255,255,0.08)}
+.card.gm{border-color:rgba(255,0,255,0.2);box-shadow:0 0 20px rgba(255,0,255,0.08)}
+.card.gl{border-color:rgba(0,255,0,0.15);box-shadow:0 0 20px rgba(0,255,0,0.06)}
+.label{font-size:10px;text-transform:uppercase;letter-spacing:1.5px;font-weight:700;margin-bottom:12px}
+.label.cyan{color:rgba(0,255,255,0.6)}.label.mag{color:rgba(255,0,255,0.6)}.label.amb{color:rgba(255,180,0,0.6)}.label.lim{color:rgba(0,255,0,0.6)}.label.red{color:rgba(255,80,80,0.6)}
+input,textarea,select{width:100%;padding:10px 12px;border-radius:12px;font-size:14px;background:var(--input-bg);border:1px solid var(--input-border);color:var(--text);outline:none;font-family:inherit;-webkit-appearance:none}
+input:focus,textarea:focus{border-color:rgba(0,255,255,0.3)}input[type="date"],input[type="time"]{color-scheme:dark}textarea{resize:none}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:10px 20px;border-radius:12px;font-size:13px;font-weight:700;border:1px solid;cursor:pointer;transition:all 0.2s;font-family:inherit}
+.btn.full{width:100%}.btn.sm{padding:6px 12px;font-size:11px}
+.btn.cyan{background:rgba(0,255,255,0.12);color:var(--cyan);border-color:rgba(0,255,255,0.3);box-shadow:0 0 12px rgba(0,255,255,0.15)}
+.btn.mag{background:rgba(255,0,255,0.12);color:var(--magenta);border-color:rgba(255,0,255,0.3);box-shadow:0 0 12px rgba(255,0,255,0.15)}
+.btn.red{background:rgba(255,0,0,0.12);color:var(--red);border-color:rgba(255,0,0,0.3)}
+.btn.amb{background:rgba(255,180,0,0.12);color:var(--amber);border-color:rgba(255,180,0,0.3)}
+.btn.ghost{background:rgba(255,255,255,0.04);color:var(--text2);border-color:rgba(255,255,255,0.08)}
+.btn:disabled{opacity:0.3;pointer-events:none}
+.row{display:flex;gap:8px;align-items:center}.row.between{justify-content:space-between}.row.wrap{flex-wrap:wrap}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.grid7{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.area-btn{padding:12px;border-radius:12px;text-align:left;border:1px solid rgba(255,255,255,0.06);background:rgba(255,255,255,0.03);cursor:pointer;transition:all 0.3s}
+.area-btn.sel{background:rgba(0,255,255,0.1);border-color:rgba(0,255,255,0.4);box-shadow:0 0 15px rgba(0,255,255,0.15)}
+.area-btn .icon{font-size:20px;margin-bottom:4px}.area-btn .name{font-size:11px;font-weight:700;color:#fff}.area-btn .count{font-size:10px;color:var(--text3)}
+.progress-wrap{margin-bottom:8px}
+.progress-label{display:flex;justify-content:space-between;font-size:10px;margin-bottom:4px}
+.progress-bar{width:100%;height:8px;border-radius:8px;background:rgba(255,255,255,0.08);overflow:hidden}
+.progress-fill{height:100%;border-radius:8px;transition:width 0.5s}
+.chore-item{display:flex;align-items:center;gap:8px;padding:10px;border-radius:12px;margin-bottom:6px;transition:all 0.2s;flex-wrap:wrap}
+.chore-item.done{background:rgba(0,255,0,0.06);border:1px solid rgba(0,255,0,0.15)}
+.chore-item.undone{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.04)}
+.chore-item.nn{border-left:3px solid var(--red)}
+.chk{width:20px;height:20px;border-radius:6px;border:2px solid rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:all 0.2s}
+.chk.checked{background:var(--lime);border-color:var(--lime);box-shadow:0 0 8px rgba(0,255,0,0.4)}
+.chore-name{font-size:13px;flex:1;min-width:0}.chore-name.done-t{text-decoration:line-through;color:var(--text3)}
+.chore-time{font-size:10px;color:rgba(0,255,255,0.5);cursor:pointer;display:flex;align-items:center;gap:3px;white-space:nowrap}
+.time-edit{display:flex;align-items:center;gap:4px}.time-edit input{width:56px;padding:3px;text-align:center;font-size:11px;border-radius:6px}
+.time-edit button{background:none;border:none;cursor:pointer;padding:2px}
+.nn-tag{font-size:8px;padding:1px 6px;border-radius:6px;background:rgba(255,80,80,0.15);color:var(--red);font-weight:700;text-transform:uppercase;letter-spacing:0.5px}
+.deadline-tag{font-size:8px;padding:1px 6px;border-radius:6px;background:rgba(255,180,0,0.15);color:var(--amber);font-weight:600}
+.status-badge{font-size:10px;padding:2px 8px;border-radius:99px;font-weight:600}
+.badge-pending{background:rgba(255,180,0,0.15);color:var(--amber)}
+.badge-approved,.badge-acknowledged{background:rgba(0,255,0,0.15);color:var(--lime)}
+.badge-declined{background:rgba(255,0,0,0.15);color:var(--red)}
+.stat-box{text-align:center;padding:12px;border-radius:12px}
+.stat-box .val{font-size:22px;font-weight:900}.stat-box .lbl{font-size:10px;color:var(--text2);margin-top:2px}
+.cal-day{aspect-ratio:1;border-radius:10px;font-size:11px;font-weight:600;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer;transition:all 0.2s;border:1px solid transparent}
+.cal-day.worked{background:rgba(0,255,0,0.2);border-color:rgba(0,255,0,0.4);color:var(--lime)}.cal-day.leave{background:rgba(255,180,0,0.1);border-color:rgba(255,180,0,0.3);color:var(--amber)}
+.cal-day.today{box-shadow:0 0 10px rgba(255,0,255,0.4)}.cal-day.normal{background:rgba(255,255,255,0.03);color:var(--text2)}
+.cal-hdr{text-align:center;font-size:10px;color:var(--text3);font-weight:600;padding:4px 0}
+.upload-zone{display:flex;align-items:center;justify-content:center;gap:8px;padding:16px;border:2px dashed rgba(0,255,255,0.2);border-radius:12px;cursor:pointer;transition:all 0.2s;font-size:13px;color:var(--text2)}
+.photo-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.photo-thumb{position:relative;border-radius:12px;overflow:hidden;border:1px solid rgba(0,255,255,0.15)}
+.photo-thumb img{width:100%;height:120px;object-fit:cover;display:block}
+.photo-thumb .date{position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,0.7);font-size:10px;padding:4px 6px;color:rgba(255,255,255,0.6)}
+.photo-thumb .del{position:absolute;top:4px;right:4px;width:22px;height:22px;border-radius:50%;background:rgba(255,0,0,0.8);color:#fff;border:none;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.leave-type-btn{flex:1;padding:8px;border-radius:12px;font-size:11px;font-weight:700;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.04);color:var(--text2);cursor:pointer;text-align:center;transition:all 0.2s}
+.leave-type-btn.sel{background:rgba(255,0,255,0.2);border-color:rgba(255,0,255,0.4);color:var(--magenta)}
+.log-entry{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;font-size:11px;margin-bottom:4px}
+.log-entry.in{background:rgba(0,255,0,0.04)}.log-entry.out{background:rgba(255,255,255,0.02)}
+.notif{position:fixed;top:16px;left:16px;right:16px;max-width:448px;margin:0 auto;z-index:100;padding:12px;border-radius:12px;background:rgba(0,255,255,0.15);border:1px solid rgba(0,255,255,0.3);color:var(--cyan);backdrop-filter:blur(10px);font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px;box-shadow:0 0 20px rgba(0,255,255,0.2);animation:slideIn 0.3s ease}
+@keyframes slideIn{from{transform:translateY(-20px);opacity:0}to{transform:translateY(0);opacity:1}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+.glow{text-shadow:0 0 8px currentColor}
+.note-block{padding:10px 12px;border-radius:10px;background:rgba(0,255,255,0.04);border:1px solid rgba(0,255,255,0.1);margin-bottom:8px;font-size:12px;color:var(--text);line-height:1.5;position:relative}
+.note-block .note-label{font-size:9px;text-transform:uppercase;letter-spacing:1px;color:rgba(0,255,255,0.4);font-weight:700;margin-bottom:4px}
+.note-block.rule{background:rgba(255,180,0,0.04);border-color:rgba(255,180,0,0.15)}.note-block.rule .note-label{color:rgba(255,180,0,0.5)}
+.emp-pill{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:12px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03);cursor:pointer;transition:all 0.2s;font-size:12px;color:var(--text)}
+.emp-pill.active{border-color:rgba(0,255,255,0.4);background:rgba(0,255,255,0.1);color:#fff}
+.emp-pill .dot{width:8px;height:8px;border-radius:50%}
+.hidden{display:none!important}
+.login-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;position:relative}
+.login-wrap{width:100%;max-width:380px;position:relative;z-index:10}
+.login-title{text-align:center;margin-bottom:32px}
+.login-title .emoji{font-size:48px;filter:drop-shadow(0 0 20px rgba(0,255,255,0.5));margin-bottom:8px}
+.login-title h1{font-size:28px;font-weight:900;color:#fff;text-shadow:0 0 30px rgba(0,255,255,0.5)}
+.login-title p{font-size:12px;color:rgba(0,255,255,0.6);margin-top:6px}
+.login-card{padding:20px;border-radius:16px;margin-bottom:12px;transition:all 0.3s;backdrop-filter:blur(8px)}
+.login-card.employee{background:rgba(0,255,255,0.05);border:1px solid rgba(0,255,255,0.2);cursor:pointer}
+.login-card.employer{background:var(--card);border:1px solid rgba(255,0,255,0.2)}
+.login-card .icon-wrap{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center}
+.login-card h3{font-size:16px;font-weight:800;color:#fff}.login-card .sub{font-size:11px;color:var(--text3)}
+.pin-row{display:flex;gap:8px;margin-top:12px}.pin-row input{flex:1}
+.pin-error{font-size:11px;color:var(--red);margin-top:8px}
+.flex1{flex:1}.tc{text-align:center}.tw{color:#fff}.mb8{margin-bottom:8px}.mb12{margin-bottom:12px}
+.emp-select-card{padding:14px;border-radius:14px;border:1px solid rgba(0,255,255,0.15);background:rgba(0,255,255,0.04);margin-bottom:8px;cursor:pointer;transition:all 0.2s}
+.emp-select-card:active{transform:scale(0.98)}
+.emp-select-card .ename{font-size:14px;font-weight:700;color:#fff}.emp-select-card .epin{font-size:10px;color:var(--text3)}
+</style>
+</head>
+<body>
+<canvas id="lasers"></canvas>
+<div id="app">
+  <div id="login-screen" class="login-screen">
+    <div class="login-wrap">
+      <div class="login-title"><div class="emoji">&#127968;</div><h1>HomeKeeper</h1><p>Household Management System</p></div>
+      <div id="login-content"></div>
+    </div>
+  </div>
+  <div id="main-app" style="display:none;flex-direction:column;height:100%">
+    <div id="header" class="header worker">
+      <div id="header-icon" class="header-icon" style="background:rgba(0,255,255,0.15)">&#127968;</div>
+      <div><h1>HomeKeeper</h1><p id="header-sub" style="color:rgba(0,255,255,0.5)">Employee</p></div>
+      <button class="switch-btn" onclick="logout()">&#8617; Switch</button>
+    </div>
+    <div id="content" class="content"></div>
+    <div id="tab-bar" class="tab-bar"></div>
+  </div>
+</div>
+<div id="notif-container"></div>
+<script>
+// ========== DATA ==========
+const AREAS={
+  kitchen:{name:"Kitchen",icon:"\u{1F373}",chores:[{name:"Wash dishes",minutes:30},{name:"Clean countertops",minutes:15},{name:"Mop floor",minutes:20},{name:"Clean appliances",minutes:25},{name:"Empty bins",minutes:10},{name:"Clean oven",minutes:40}]},
+  lounge:{name:"Living Room",icon:"\u{1F6CB}",chores:[{name:"Vacuum carpet",minutes:25},{name:"Dust surfaces",minutes:20},{name:"Clean windows",minutes:30},{name:"Tidy cushions & throws",minutes:10},{name:"Polish furniture",minutes:20}]},
+  bedrooms:{name:"Bedrooms",icon:"\u{1F6CF}",chores:[{name:"Change bed linen",minutes:20},{name:"Make beds",minutes:10},{name:"Vacuum floors",minutes:20},{name:"Dust furniture",minutes:15},{name:"Organize closets",minutes:30}]},
+  bathrooms:{name:"Bathrooms",icon:"\u{1F6BF}",chores:[{name:"Scrub toilet",minutes:15},{name:"Clean shower/bath",minutes:25},{name:"Clean basin & mirror",minutes:15},{name:"Mop floor",minutes:15},{name:"Restock supplies",minutes:5}]},
+  laundry:{name:"Laundry",icon:"\u{1F455}",chores:[{name:"Sort & load washing",minutes:15},{name:"Hang clothes to dry",minutes:20},{name:"Iron clothes",minutes:60},{name:"Fold & store clothes",minutes:30}]},
+  outdoor:{name:"Outdoor Areas",icon:"\u{1F33F}",chores:[{name:"Sweep patio/stoep",minutes:20},{name:"Water plants",minutes:15},{name:"Clean braai area",minutes:25},{name:"Wipe outdoor furniture",minutes:15}]},
+  garage:{name:"Garage",icon:"\u{1F697}",chores:[{name:"Sweep floor",minutes:20},{name:"Organize shelves",minutes:30},{name:"Dust & wipe surfaces",minutes:15}]}
+};
+
+const DEFAULTS={
+  employerPin:"1234",employerEmail:"",
+  employees:[{id:1,name:"Employee 1",pin:"0001",color:"#0ff",monthlySalary:4500,workHoursPerDay:7,breakMinutes:30,workDaysPerWeek:5,signedIn:false,signInTime:null,signOutTime:null,selectedAreas:[],chores:[],completedChores:[],breakages:[],photos:[],calendarDays:{},leaveRequests:[],clockLog:[]}],
+  areaNotes:{},areaRules:{},choreFlags:{},choreDeadlines:{}
+};
+
+let S={};
+function load(){try{const d=localStorage.getItem('hk3');S=d?{...DEFAULTS,...JSON.parse(d)}:{...DEFAULTS};if(!S.employees||!S.employees.length)S.employees=[DEFAULTS.employees[0]];if(!S.areaNotes)S.areaNotes={};if(!S.areaRules)S.areaRules={};if(!S.choreFlags)S.choreFlags={};if(!S.choreDeadlines)S.choreDeadlines={}}catch(e){S={...DEFAULTS}}}
+function save(){try{localStorage.setItem('hk3',JSON.stringify(S))}catch(e){}}
+load();
+
+let role=null,currentTab='home',selMonth=new Date().toISOString().slice(0,7),activeEmpId=null,loginStep='choose';
+
+function E(){return S.employees.find(e=>e.id===activeEmpId)||S.employees[0]}
+function fmt(d){return d?new Date(d).toLocaleTimeString("en-ZA",{hour:"2-digit",minute:"2-digit"}):"--:--"}
+function today(){return new Date().toISOString().slice(0,10)}
+function dateDisp(d){return new Date(d+"T00:00:00").toLocaleDateString("en-ZA",{weekday:"short",day:"numeric",month:"short"})}
+function eff(e){return(e||E()).workHoursPerDay*60-(e||E()).breakMinutes}
+function alloc(e){return(e||E()).chores.reduce((t,c)=>t+c.minutes,0)}
+function comp(e){const em=e||E();return em.completedChores.reduce((t,id)=>{const c=em.chores.find(x=>x.id===id);return t+(c?c.minutes:0)},0)}
+function dRate(e){const em=e||E();return Math.round((em.monthlySalary/(em.workDaysPerWeek*4.33))*100)/100}
+function calcSal(ms,e){const em=e||E();const[y,m]=ms.split("-").map(Number);const days=new Date(y,m,0).getDate();let dw=0;for(let d=1;d<=days;d++){const k=`${y}-${String(m).padStart(2,"0")}-${String(d).padStart(2,"0")}`;if(em.calendarDays[k]?.worked)dw++}return{daysWorked:dw,salary:Math.round(dw*dRate(em)*100)/100}}
+function notify(msg){const el=document.createElement('div');el.className='notif';el.innerHTML=msg;document.getElementById('notif-container').appendChild(el);setTimeout(()=>el.remove(),3000)}
+function progressHTML(v,mx,lbl,col){const p=Math.min((v/mx)*100,100);const c=p>90?'#f00':p>70?'#ff0':col||'#0ff';return`<div class="progress-wrap"><div class="progress-label"><span style="color:var(--text2)">${lbl}</span><span style="color:${c}">${v}/${mx} min</span></div><div class="progress-bar"><div class="progress-fill" style="width:${p}%;background:${c};box-shadow:0 0 10px ${c}80"></div></div></div>`}
+function choreKey(area,name){return area+'::'+name}
+function isNN(area,name){return S.choreFlags[choreKey(area,name)]==='nn'}
+function getDeadline(area,name){return S.choreDeadlines[choreKey(area,name)]||null}
+
+// ========== LASER BG ==========
+(function(){const cv=document.getElementById('lasers'),ctx=cv.getContext('2d');function rs(){cv.width=innerWidth;cv.height=innerHeight}rs();addEventListener('resize',rs);const B=Array.from({length:8},()=>({x:Math.random()*cv.width,y:Math.random()*cv.height,vx:(Math.random()-.5)*2,vy:(Math.random()-.5)*2,hue:Math.random()*360,len:120+Math.random()*200}));(function d(){ctx.fillStyle="rgba(8,8,18,0.15)";ctx.fillRect(0,0,cv.width,cv.height);B.forEach(b=>{b.x+=b.vx;b.y+=b.vy;b.hue=(b.hue+.5)%360;if(b.x<0||b.x>cv.width)b.vx*=-1;if(b.y<0||b.y>cv.height)b.vy*=-1;const a=Math.atan2(b.vy,b.vx),g=ctx.createLinearGradient(b.x,b.y,b.x+Math.cos(a)*b.len,b.y+Math.sin(a)*b.len);g.addColorStop(0,`hsla(${b.hue},100%,70%,0.8)`);g.addColorStop(1,`hsla(${b.hue},100%,50%,0)`);ctx.strokeStyle=g;ctx.lineWidth=1.5;ctx.shadowBlur=12;ctx.shadowColor=`hsla(${b.hue},100%,60%,0.6)`;ctx.beginPath();ctx.moveTo(b.x,b.y);ctx.lineTo(b.x+Math.cos(a)*b.len,b.y+Math.sin(a)*b.len);ctx.stroke();ctx.shadowBlur=0});requestAnimationFrame(d)})()})();
+
+// ========== LOGIN ==========
+function renderLogin(){
+  const el=document.getElementById('login-content');
+  if(loginStep==='choose'){
+    let h=`<div class="login-card employee" onclick="loginStep='emp_select';renderLogin()"><div class="row" style="gap:16px"><div class="icon-wrap" style="background:rgba(0,255,255,0.15)"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0ff" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div><div><h3>Employee</h3><p class="sub">Sign in, manage chores, request leave</p></div></div></div>`;
+    h+=`<div class="login-card employer"><div class="row" style="gap:16px;margin-bottom:12px"><div class="icon-wrap" style="background:rgba(255,0,255,0.15)"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#f0f" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div><div><h3>Employer</h3><p class="sub">Settings, reports, approvals</p></div></div><div class="pin-row"><input type="password" id="pin-input" placeholder="Enter PIN" onkeydown="if(event.key==='Enter')empLogin()"><button class="btn sm mag" onclick="empLogin()">&#128274; Enter</button></div><div id="pin-error" class="pin-error hidden">Incorrect PIN. Default: 1234</div></div>`;
+    el.innerHTML=h;
+  } else if(loginStep==='emp_select'){
+    let h=`<div style="margin-bottom:16px"><button class="btn sm ghost" onclick="loginStep='choose';renderLogin()">&#8592; Back</button></div><div class="label cyan" style="margin-bottom:16px">Select Your Profile</div>`;
+    S.employees.forEach(emp=>{
+      h+=`<div class="emp-select-card" onclick="empSelectLogin(${emp.id})"><div class="row" style="gap:12px"><div style="width:36px;height:36px;border-radius:10px;background:${emp.color}20;display:flex;align-items:center;justify-content:center;font-size:16px;border:1px solid ${emp.color}40">&#128100;</div><div><div class="ename">${emp.name}</div><div class="epin">Tap to sign in</div></div></div></div>`;
+    });
+    el.innerHTML=h;
+  } else if(loginStep==='emp_pin'){
+    const emp=S.employees.find(e=>e.id===activeEmpId);
+    let h=`<div style="margin-bottom:16px"><button class="btn sm ghost" onclick="loginStep='emp_select';renderLogin()">&#8592; Back</button></div>`;
+    h+=`<div class="card gc"><div class="tc"><div style="font-size:32px;margin-bottom:8px">&#128100;</div><h3 class="tw" style="font-size:18px">${emp.name}</h3><p style="font-size:11px;color:var(--text3);margin-top:4px">Enter your PIN to continue</p></div><div class="pin-row" style="margin-top:16px"><input type="password" id="emp-pin-input" placeholder="Your PIN" onkeydown="if(event.key==='Enter')verifyEmpPin()"><button class="btn sm cyan" onclick="verifyEmpPin()">&#10148; Go</button></div><div id="emp-pin-error" class="pin-error hidden">Wrong PIN.</div></div>`;
+    el.innerHTML=h;
+  }
+}
+
+function empLogin(){
+  const pin=document.getElementById('pin-input').value;
+  if(pin===S.employerPin){role='employer';activeEmpId=S.employees[0].id;showApp()}
+  else document.getElementById('pin-error').classList.remove('hidden');
+}
+function empSelectLogin(id){activeEmpId=id;loginStep='emp_pin';renderLogin()}
+function verifyEmpPin(){
+  const emp=S.employees.find(e=>e.id===activeEmpId);
+  const pin=document.getElementById('emp-pin-input').value;
+  if(pin===emp.pin){role='employee';showApp()}
+  else document.getElementById('emp-pin-error').classList.remove('hidden');
+}
+function logout(){
+  role=null;activeEmpId=null;loginStep='choose';currentTab='home';
+  document.getElementById('login-screen').style.display='flex';document.getElementById('main-app').style.display='none';
+  renderLogin();
+}
+function showApp(){
+  document.getElementById('login-screen').style.display='none';
+  const ma=document.getElementById('main-app');ma.style.display='flex';
+  const hdr=document.getElementById('header'),hi=document.getElementById('header-icon'),hs=document.getElementById('header-sub');
+  if(role==='employer'){hdr.className='header emp';hi.style.background='rgba(255,0,255,0.15)';hi.innerHTML='&#128274;';hs.style.color='rgba(255,0,255,0.5)';hs.textContent='Employer Panel';currentTab='dashboard'}
+  else{hdr.className='header worker';hi.style.background='rgba(0,255,255,0.15)';hi.innerHTML='&#127968;';hs.style.color='rgba(0,255,255,0.5)';hs.textContent=E().name;currentTab='home'}
+  renderTabs();render();
+}
+
+// ========== ICONS ==========
+const IC={
+  home:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>',
+  chores:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 12l2 2 4-4"/></svg>',
+  photos:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>',
+  warn:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+  heart:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78z"/></svg>',
+  dollar:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>',
+  notes:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>',
+  settings:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>',
+  cal:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
+  clock:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>',
+  users:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
+  shield:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>'
+};
+
+// ========== TABS ==========
+const empTabs=[{id:'home',label:'Home',icon:IC.home},{id:'chores',label:'Chores',icon:IC.chores},{id:'guide',label:'Guide',icon:IC.notes},{id:'breakages',label:'Report',icon:IC.warn},{id:'leave',label:'Leave',icon:IC.heart},{id:'salary',label:'Pay',icon:IC.dollar}];
+const emplerTabs=[{id:'dashboard',label:'Dash',icon:IC.home},{id:'employees',label:'Team',icon:IC.users},{id:'guide_edit',label:'Guide',icon:IC.notes},{id:'calendar',label:'Calendar',icon:IC.cal},{id:'clocklog',label:'Log',icon:IC.clock},{id:'emp_leave',label:'Leave',icon:IC.heart}];
+
+function renderTabs(){
+  const tabs=role==='employer'?emplerTabs:empTabs;
+  const accent=role==='employer'?'#f0f':'#0ff';
+  const em=E();
+  const pL=em.leaveRequests.filter(l=>l.status==='pending').length;
+  const pB=em.breakages.filter(b=>b.status==='pending').length;
+  let h='';tabs.forEach(t=>{
+    const a=currentTab===t.id;const pending=(t.id==='emp_leave'||t.id==='leave')?pL:(t.id==='emp_breakages'||t.id==='breakages')?pB:0;
+    h+=`<button class="tab-btn${a?' active':''}" onclick="switchTab('${t.id}')" style="color:${a?accent:'rgba(255,255,255,0.3)'}">${t.icon}<span>${t.label}</span>${pending>0?`<div class="tab-badge">${pending}</div>`:''}</button>`;
+  });
+  document.getElementById('tab-bar').innerHTML=h;
+  document.getElementById('tab-bar').style.borderTop=`1px solid ${role==='employer'?'rgba(255,0,255,0.1)':'rgba(0,255,255,0.1)'}`;
+}
+function switchTab(id){currentTab=id;renderTabs();render()}
+
+// ========== ACTIONS ==========
+function toggleArea(key){
+  const em=E(),i=em.selectedAreas.indexOf(key);
+  if(i>-1){em.selectedAreas.splice(i,1);em.chores=em.chores.filter(c=>c.area!==key)}
+  else{em.selectedAreas.push(key);const nc=AREAS[key].chores.map((ch,j)=>({...ch,id:`${key}-${j}`,area:key}));em.chores.push(...nc)}
+  save();render();
+}
+function toggleChore(id){const em=E(),i=em.completedChores.indexOf(id);if(i>-1)em.completedChores.splice(i,1);else em.completedChores.push(id);save();render()}
+function removeChore(id){const em=E();em.chores=em.chores.filter(c=>c.id!==id);em.completedChores=em.completedChores.filter(x=>x!==id);save();render()}
+function saveChoreTime(id){const inp=document.getElementById('et-'+id);if(!inp)return;const em=E(),ch=em.chores.find(c=>c.id===id);if(ch)ch.minutes=Math.max(5,parseInt(inp.value)||15);save();render()}
+function addAdhoc(){const n=document.getElementById('adhoc-name').value.trim(),m=parseInt(document.getElementById('adhoc-mins').value)||15;if(!n)return;const em=E();em.chores.push({name:n,minutes:m,id:'ad-'+Date.now(),area:em.selectedAreas[0]||'general',adhoc:true});save();render()}
+function signIn(){const em=E(),now=new Date();em.signedIn=true;em.signInTime=now.toISOString();em.signOutTime=null;em.completedChores=[];em.clockLog.push({type:'in',time:now.toISOString(),date:today()});save();notify('Signed in!');render();renderTabs()}
+function signOut(){const em=E(),now=new Date();const hrs=em.signInTime?Math.min(Math.round(((now-new Date(em.signInTime))/3600000)*100)/100,em.workHoursPerDay):0;const dk=today();em.signedIn=false;em.signOutTime=now.toISOString();em.calendarDays[dk]={worked:true,signIn:fmt(em.signInTime),signOut:fmt(now.toISOString()),hoursWorked:hrs,choresCompleted:em.completedChores.length,totalChores:em.chores.length};em.clockLog.push({type:'out',time:now.toISOString(),date:dk});save();notify('Signed out!');render();renderTabs()}
+function addBreakage(){const t=document.getElementById('brk-text').value.trim();if(!t)return;E().breakages.push({id:Date.now(),text:t,photos:[],date:new Date().toLocaleString("en-ZA"),status:'pending'});save();notify('Breakage logged.');render();renderTabs()}
+function ackBreakage(id){const b=E().breakages.find(x=>x.id===id);if(b)b.status='acknowledged';save();render();renderTabs()}
+function handleWorkPhoto(inp){Array.from(inp.files).forEach(f=>{const r=new FileReader();r.onload=ev=>{E().photos.push({id:Date.now(),src:ev.target.result,date:new Date().toLocaleString("en-ZA")});save();render()};r.readAsDataURL(f)})}
+function delPhoto(id){const em=E();em.photos=em.photos.filter(p=>p.id!==id);save();render()}
+function submitLeave(){
+  const type=document.querySelector('.leave-type-btn.sel')?.dataset.type||'sick';
+  const date=document.getElementById('leave-date').value,note=document.getElementById('leave-note').value;
+  if(!date)return;E().leaveRequests.push({id:Date.now(),type,date,note,status:'pending'});save();notify('Leave submitted!');render();renderTabs();
+}
+function selectLeaveType(t){document.querySelectorAll('.leave-type-btn').forEach(b=>b.classList.toggle('sel',b.dataset.type===t))}
+function approveLeave(id){const l=E().leaveRequests.find(x=>x.id===id);if(l)l.status='approved';save();render();renderTabs()}
+function declineLeave(id){const l=E().leaveRequests.find(x=>x.id===id);if(l)l.status='declined';save();render();renderTabs()}
+function toggleWorkDay(dk){const em=E();if(em.calendarDays[dk]?.worked)delete em.calendarDays[dk];else em.calendarDays[dk]={worked:true,signIn:"08:00",signOut:`${String(8+em.workHoursPerDay).padStart(2,"0")}:00`,hoursWorked:em.workHoursPerDay};save();render()}
+function changeMonth(d){const[y,m]=selMonth.split("-").map(Number);const dt=new Date(y,m-1+d,1);selMonth=`${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,"0")}`;render()}
+
+// Employer employee management
+function addEmployee(){
+  if(S.employees.length>=4){notify('Maximum 4 employees.');return}
+  const colors=['#0ff','#f0f','#0f0','#fb0'];
+  const id=Date.now();
+  S.employees.push({id,name:`Employee ${S.employees.length+1}`,pin:String(S.employees.length+1).padStart(4,'0'),color:colors[S.employees.length%4],monthlySalary:4500,workHoursPerDay:7,breakMinutes:30,workDaysPerWeek:5,signedIn:false,signInTime:null,signOutTime:null,selectedAreas:[],chores:[],completedChores:[],breakages:[],photos:[],calendarDays:{},leaveRequests:[],clockLog:[]});
+  save();render();
+}
+function removeEmployee(id){if(S.employees.length<=1){notify('Must have at least 1 employee.');return}S.employees=S.employees.filter(e=>e.id!==id);if(activeEmpId===id)activeEmpId=S.employees[0].id;save();render()}
+function saveEmpField(id,key,val,isNum){const em=S.employees.find(e=>e.id===id);if(em)em[key]=isNum?Number(val):val;save()}
+function selectActiveEmp(id){activeEmpId=id;render();renderTabs()}
+
+// Notes & Rules
+function saveAreaNote(area){const v=document.getElementById('note-'+area).value;S.areaNotes[area]=v;save();notify('Note saved.')}
+function saveAreaRule(area){const v=document.getElementById('rule-'+area).value;S.areaRules[area]=v;save();notify('Rules saved.')}
+function toggleNN(area,name){const k=choreKey(area,name);S.choreFlags[k]=S.choreFlags[k]==='nn'?'':' nn';save();render()}
+function saveDeadline(area,name){const v=document.getElementById('dl-'+area+'-'+name.replace(/\s/g,'_')).value;S.choreDeadlines[choreKey(area,name)]=v;save();notify('Deadline set.')}
+
+// ========== RENDER ==========
+function render(){const el=document.getElementById('content');const V={home:vHome,chores:vChores,guide:vGuide,breakages:vBreak,leave:vLeave,salary:vSalary,photos:vPhotos,dashboard:vDash,employees:vEmployees,guide_edit:vGuideEdit,calendar:vCal,clocklog:vClockLog,emp_leave:vEmpLeave};el.innerHTML=(V[currentTab]||V.home)();el.scrollTop=0}
+
+// ========== EMPLOYEE VIEWS ==========
+function vHome(){
+  const em=E(),todayStr=new Date().toLocaleDateString("en-ZA",{weekday:"long",year:"numeric",month:"long",day:"numeric"});
+  let h=`<div class="card gc"><div class="tc"><div style="font-size:40px;filter:drop-shadow(0 0 15px rgba(0,255,255,0.4))">&#127968;</div><h2 class="tw" style="font-size:20px;font-weight:900;margin:8px 0">Welcome, <span class="glow" style="color:#0ff">${em.name}</span></h2><p style="font-size:12px;color:var(--text2)">${todayStr}</p><p style="font-size:11px;color:rgba(0,255,255,0.5);margin-top:4px">${em.workHoursPerDay}h day (${em.breakMinutes}min break)</p>`;
+  if(em.signedIn)h+=`<p style="font-size:11px;color:#0f0;text-shadow:0 0 8px #0f0;margin-top:8px">Signed in at ${fmt(em.signInTime)}</p>`;
+  h+=`</div></div>`;
+  h+=`<div class="card"><div class="label cyan">Clock In / Out</div>`;
+  if(!em.signedIn){h+=`<button class="btn cyan full" onclick="signIn()">&#9654; Sign In</button>`;if(em.signOutTime)h+=`<p class="tc" style="font-size:10px;color:var(--text3);margin-top:10px">Last out: ${fmt(em.signOutTime)}</p>`}
+  else{h+=`<div class="row" style="padding:10px;border-radius:12px;background:rgba(0,255,0,0.08);border:1px solid rgba(0,255,0,0.2);gap:8px;margin-bottom:10px"><div style="width:10px;height:10px;border-radius:50%;background:#0f0;box-shadow:0 0 10px #0f0;animation:pulse 2s infinite"></div><span style="font-size:13px;color:#0f0;font-weight:600">Working since ${fmt(em.signInTime)}</span></div><button class="btn red full" onclick="signOut()">&#9632; Sign Out</button>`}
+  h+=`</div>`;
+  h+=`<div class="card"><div class="label cyan">Work Areas</div><div class="grid2">`;
+  Object.entries(AREAS).forEach(([k,a])=>{const sel=em.selectedAreas.includes(k);const nnCount=a.chores.filter(c=>isNN(k,c.name)).length;h+=`<div class="area-btn${sel?' sel':''}" onclick="toggleArea('${k}')"><div class="icon">${a.icon}</div><div class="name">${a.name}</div><div class="count">${a.chores.length} chores${nnCount?' &middot; <span style="color:var(--red)">'+nnCount+' must-do</span>':''}</div></div>`});
+  h+=`</div></div>`;
+  if(em.selectedAreas.length>0){h+=`<div class="card">${progressHTML(alloc(),eff(),'Time budget ('+eff()+' min)')}`;if(alloc()>eff())h+=`<div style="margin-top:8px;padding:8px;border-radius:8px;background:rgba(255,0,0,0.08);border:1px solid rgba(255,0,0,0.2);font-size:11px;color:#f66">&#9888; Over by ${alloc()-eff()} min</div>`;h+=`<div style="margin-top:8px">${progressHTML(comp(),alloc()||1,'Completed','#0f0')}</div></div>`}
+  h+=`<div class="card gl"><div class="label lim">Today's Pay</div><div class="tc" style="padding:16px;border-radius:12px;background:rgba(0,255,0,0.05)"><div style="font-size:28px;font-weight:900;color:#0f0;text-shadow:0 0 20px rgba(0,255,0,0.4)">R${dRate().toFixed(2)}</div><div style="font-size:10px;color:var(--text2);margin-top:4px">Daily rate</div></div></div>`;
+  return h;
+}
+
+function vChores(){
+  const em=E();
+  if(!em.selectedAreas.length)return`<div class="card"><p class="tc" style="color:var(--text3);padding:32px 0;font-size:13px">Select areas on Home tab first.</p></div>`;
+  let h=`<div class="card">${progressHTML(alloc(),eff(),'Time ('+eff()+' min)')}</div>`;
+  em.selectedAreas.forEach(ak=>{
+    const area=AREAS[ak],ac=em.chores.filter(c=>c.area===ak);
+    const note=S.areaNotes[ak],rules=S.areaRules[ak];
+    h+=`<div class="card"><h3 class="tw" style="font-size:14px;font-weight:700;margin-bottom:8px">${area.icon} ${area.name}</h3>`;
+    if(note)h+=`<div class="note-block"><div class="note-label">&#128205; Placement Notes</div>${note.replace(/\n/g,'<br>')}</div>`;
+    if(rules)h+=`<div class="note-block rule"><div class="note-label">&#9888; House Rules</div>${rules.replace(/\n/g,'<br>')}</div>`;
+    // Non-negotiables first
+    const sorted=[...ac].sort((a,b)=>(isNN(ak,b.name)?1:0)-(isNN(ak,a.name)?1:0));
+    sorted.forEach(ch=>{
+      const done=em.completedChores.includes(ch.id),nn=isNN(ak,ch.name),dl=getDeadline(ak,ch.name);
+      h+=`<div class="chore-item ${done?'done':'undone'}${nn?' nn':''}"><div class="chk${done?' checked':''}" onclick="toggleChore('${ch.id}')">${done?'&#10003;':''}</div><span class="chore-name${done?' done-t':''}">${ch.name}</span>`;
+      if(nn)h+=`<span class="nn-tag">Must-do</span>`;
+      if(dl)h+=`<span class="deadline-tag">by ${dl}</span>`;
+      h+=`<span class="chore-time" onclick="this.style.display='none';this.nextElementSibling.style.display='flex'">&#128339;${ch.minutes}m &#9998;</span><span class="time-edit" style="display:none"><input type="number" id="et-${ch.id}" value="${ch.minutes}" min="5" step="5"><button onclick="saveChoreTime('${ch.id}')" style="color:#0f0">&#10003;</button><button onclick="this.parentElement.style.display='none';this.parentElement.previousElementSibling.style.display='flex'" style="color:var(--text3)">&#10005;</button></span>`;
+      if(ch.adhoc)h+=`<button style="background:none;border:none;color:rgba(255,0,0,0.5);cursor:pointer;font-size:16px" onclick="removeChore('${ch.id}')">&#128465;</button>`;
+      h+=`</div>`;
+    });
+    h+=`</div>`;
+  });
+  h+=`<div class="card"><div class="label cyan">Add Ad-Hoc Chore</div><input id="adhoc-name" placeholder="Chore description..." style="margin-bottom:8px"><div class="row"><span style="font-size:11px;color:var(--text2)">Min:</span><input id="adhoc-mins" type="number" value="15" min="5" step="5" style="width:70px"><button class="btn cyan sm" onclick="addAdhoc()">+ Add</button></div></div>`;
+  return h;
+}
+
+function vGuide(){
+  const em=E();
+  let h=`<div class="card gc"><div class="tc"><div style="font-size:32px;margin-bottom:8px">&#128214;</div><h3 class="tw" style="font-size:18px">House Guide</h3><p style="font-size:11px;color:var(--text2);margin-top:4px">Notes, rules & placements set by your employer</p></div></div>`;
+  Object.entries(AREAS).forEach(([k,a])=>{
+    const note=S.areaNotes[k],rules=S.areaRules[k];
+    const nnChores=a.chores.filter(c=>isNN(k,c.name));
+    const dlChores=a.chores.filter(c=>getDeadline(k,c.name));
+    if(!note&&!rules&&!nnChores.length&&!dlChores.length)return;
+    h+=`<div class="card"><h3 class="tw" style="font-size:14px;font-weight:700;margin-bottom:10px">${a.icon} ${a.name}</h3>`;
+    if(note)h+=`<div class="note-block"><div class="note-label">&#128205; Placement Notes</div>${note.replace(/\n/g,'<br>')}</div>`;
+    if(rules)h+=`<div class="note-block rule"><div class="note-label">&#9888; Rules & Needs</div>${rules.replace(/\n/g,'<br>')}</div>`;
+    if(nnChores.length){h+=`<div style="margin-top:8px"><div style="font-size:10px;color:var(--red);font-weight:700;text-transform:uppercase;margin-bottom:6px">&#128308; Non-Negotiable Chores</div>`;nnChores.forEach(c=>{const dl=getDeadline(k,c.name);h+=`<div style="padding:6px 10px;border-radius:8px;background:rgba(255,80,80,0.06);border:1px solid rgba(255,80,80,0.12);margin-bottom:4px;font-size:12px;color:var(--text);display:flex;align-items:center;gap:8px"><span class="nn-tag">Must-do</span><span class="flex1">${c.name}</span>${dl?`<span class="deadline-tag">by ${dl}</span>`:''}<span style="color:var(--text3);font-size:10px">${c.minutes}m</span></div>`});h+=`</div>`}
+    h+=`</div>`;
+  });
+  if(h.split('class="card"').length<=2)h+=`<div class="card"><p class="tc" style="color:var(--text3);font-size:12px;padding:20px">No house guide notes have been added yet. Your employer can add placement notes, rules, and mark non-negotiable chores.</p></div>`;
+  return h;
+}
+
+function vBreak(){
+  const em=E();
+  let h=`<div class="card"><div class="label amb">Log a Breakage</div><input id="brk-text" placeholder="Describe what was broken..." style="margin-bottom:10px"><label class="upload-zone" style="margin-bottom:10px;border-color:rgba(255,180,0,0.2)">&#128247; Attach Photo<input type="file" accept="image/*" multiple style="display:none" onchange="handleWorkPhoto(this)"></label><button class="btn amb full" onclick="addBreakage()">&#9888; Log Breakage</button></div>`;
+  if(em.breakages.length){h+=`<div class="card"><div class="label amb">Reports</div>`;em.breakages.slice().reverse().forEach(b=>{h+=`<div style="padding:12px;border-radius:12px;background:rgba(255,180,0,0.05);border:1px solid rgba(255,180,0,0.15);margin-bottom:8px"><div class="row between"><span class="tw" style="font-size:13px;font-weight:600">${b.text}</span><span class="status-badge badge-${b.status}">${b.status}</span></div><p style="font-size:10px;color:var(--text3);margin-top:4px">${b.date}</p></div>`});h+=`</div>`}
+  return h;
+}
+
+function vLeave(){
+  let h=`<div class="card gm"><div class="label mag">Request Leave / Report Sick</div><div class="row" style="margin-bottom:10px">`;
+  [['sick','&#129298; Sick'],['leave','&#127958; Leave'],['family','&#128104;&#8205;&#128105;&#8205;&#128103; Family']].forEach(([t,l])=>{h+=`<div class="leave-type-btn${t==='sick'?' sel':''}" data-type="${t}" onclick="selectLeaveType('${t}')">${l}</div>`});
+  h+=`</div><div style="margin-bottom:8px"><label style="font-size:10px;color:var(--text2)">Date</label><input type="date" id="leave-date" value="${today()}"></div><div style="margin-bottom:10px"><label style="font-size:10px;color:var(--text2)">Note</label><textarea id="leave-note" rows="2" placeholder="Details..."></textarea></div><button class="btn mag full" onclick="submitLeave()">&#10084; Submit</button></div>`;
+  const reqs=E().leaveRequests;
+  if(reqs.length){h+=`<div class="card"><div class="label mag">Your Requests</div>`;reqs.slice().reverse().forEach(l=>{const ico=l.type==='sick'?'&#129298;':l.type==='leave'?'&#127958;':'&#128104;&#8205;&#128105;&#8205;&#128103;';h+=`<div style="padding:10px;border-radius:12px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);margin-bottom:6px" class="row between"><div><span class="tw" style="font-size:13px;font-weight:600">${ico} ${dateDisp(l.date)}</span>${l.note?`<p style="font-size:10px;color:var(--text3);margin-top:2px">${l.note}</p>`:''}</div><span class="status-badge badge-${l.status}">${l.status}</span></div>`});h+=`</div>`}
+  return h;
+}
+
+function vSalary(){
+  const em=E(),sal=calcSal(selMonth);
+  const[y,m]=selMonth.split("-").map(Number);const mn=new Date(y,m-1).toLocaleDateString("en-ZA",{month:"long",year:"numeric"});
+  return`<div class="card gl"><div class="tc" style="margin-bottom:16px"><div style="font-size:32px;color:#0f0;filter:drop-shadow(0 0 10px rgba(0,255,0,0.5))">&#128176;</div><h3 class="tw" style="font-size:20px;font-weight:900;margin-top:8px">Pay Summary</h3></div><div class="row between" style="margin-bottom:16px"><button class="btn sm cyan" onclick="changeMonth(-1)">&#9664;</button><span style="color:#0ff;font-weight:700">${mn}</span><button class="btn sm cyan" onclick="changeMonth(1)">&#9654;</button></div><div style="font-size:13px"><div class="row between" style="padding:10px;border-radius:12px;background:rgba(255,255,255,0.03);margin-bottom:6px"><span style="color:var(--text2)">Daily Rate</span><span style="color:#0ff;font-weight:700">R${dRate().toFixed(2)}</span></div><div class="row between" style="padding:10px;border-radius:12px;background:rgba(255,255,255,0.03);margin-bottom:6px"><span style="color:var(--text2)">Days Worked</span><span class="tw" style="font-weight:700">${sal.daysWorked}</span></div><div class="row between" style="padding:12px;border-radius:12px;background:rgba(0,255,0,0.08);border:1px solid rgba(0,255,0,0.2)"><span style="color:#0f0;font-weight:600">Earned</span><span style="color:#0f0;font-weight:900;font-size:20px;text-shadow:0 0 10px rgba(0,255,0,0.4)">R${sal.salary.toFixed(2)}</span></div></div></div>`;
+}
+
+function vPhotos(){
+  let h=`<div class="card"><div class="label cyan">Work Photos</div><label class="upload-zone">&#128247; Upload<input type="file" accept="image/*" multiple style="display:none" onchange="handleWorkPhoto(this)"></label></div>`;
+  const em=E();if(em.photos.length){h+=`<div class="card"><div class="photo-grid">`;em.photos.forEach(p=>{h+=`<div class="photo-thumb"><img src="${p.src}"><div class="date">${p.date}</div><button class="del" onclick="delPhoto(${p.id})">&#10005;</button></div>`});h+=`</div></div>`}
+  return h;
+}
+
+// ========== EMPLOYER VIEWS ==========
+function empSelector(){
+  let h=`<div class="row wrap" style="margin-bottom:16px">`;
+  S.employees.forEach(em=>{h+=`<div class="emp-pill${em.id===activeEmpId?' active':''}" onclick="selectActiveEmp(${em.id})"><div class="dot" style="background:${em.color}"></div>${em.name}</div>`});
+  h+=`</div>`;return h;
+}
+
+function vDash(){
+  const em=E(),sal=calcSal(selMonth,em);
+  const pL=em.leaveRequests.filter(l=>l.status==='pending').length,pB=em.breakages.filter(b=>b.status==='pending').length;
+  let h=`<div class="card gm"><div class="row" style="gap:12px"><div style="width:40px;height:40px;border-radius:12px;background:rgba(255,0,255,0.15);display:flex;align-items:center;justify-content:center">${IC.shield.replace('currentColor','#f0f')}</div><div><h2 class="tw" style="font-size:18px;font-weight:800">Employer Dashboard</h2><p style="font-size:11px;color:var(--text2)">Manage your team</p></div></div></div>`;
+  h+=empSelector();
+  h+=`<div class="grid2">`;
+  [{v:`R${em.monthlySalary}`,l:'Monthly Salary',c:'#0f0'},{v:sal.daysWorked,l:'Days This Month',c:'#0ff'},{v:pL,l:'Pending Leave',c:'#fb0'},{v:pB,l:'Breakages',c:'#f55'}].forEach(s=>{h+=`<div class="card"><div class="stat-box"><div class="val" style="color:${s.c};text-shadow:0 0 12px ${s.c}60">${s.v}</div><div class="lbl">${s.l}</div></div></div>`});
+  h+=`</div>`;
+  if(em.signedIn)h+=`<div class="card gl"><div class="row" style="padding:8px;border-radius:12px;background:rgba(0,255,0,0.06);gap:8px"><div style="width:10px;height:10px;border-radius:50%;background:#0f0;box-shadow:0 0 10px #0f0"></div><span style="font-size:13px;color:#0f0;font-weight:600">${em.name} is signed in since ${fmt(em.signInTime)}</span></div></div>`;
+  // Recent breakages
+  const pendingB=em.breakages.filter(b=>b.status==='pending');
+  if(pendingB.length){h+=`<div class="card"><div class="label amb">Pending Breakages</div>`;pendingB.forEach(b=>{h+=`<div style="padding:10px;border-radius:12px;background:rgba(255,180,0,0.05);border:1px solid rgba(255,180,0,0.15);margin-bottom:8px"><div class="row between"><span class="tw" style="font-size:12px;font-weight:600">${b.text}</span><button class="btn sm cyan" onclick="ackBreakage(${b.id})">&#10003;</button></div><p style="font-size:10px;color:var(--text3);margin-top:4px">${b.date}</p></div>`});h+=`</div>`}
+  return h;
+}
+
+function vEmployees(){
+  let h=`<div class="card gm"><div class="row between"><div class="label mag" style="margin-bottom:0">Team Members (${S.employees.length}/4)</div><button class="btn sm mag" onclick="addEmployee()" ${S.employees.length>=4?'disabled':''}>+ Add</button></div></div>`;
+  S.employees.forEach(em=>{
+    h+=`<div class="card" style="border-left:3px solid ${em.color}"><div class="row between" style="margin-bottom:12px"><h3 class="tw" style="font-size:15px;font-weight:700">${em.name}</h3><button class="btn sm red" onclick="if(confirm('Remove ${em.name}?'))removeEmployee(${em.id})">Remove</button></div>`;
+    [{k:'name',l:'Name',t:'text'},{k:'pin',l:'PIN',t:'text'},{k:'monthlySalary',l:'Monthly Salary (R)',t:'number'},{k:'workHoursPerDay',l:'Hours/Day',t:'number'},{k:'breakMinutes',l:'Break (min)',t:'number'},{k:'workDaysPerWeek',l:'Days/Week',t:'number'}].forEach(f=>{
+      h+=`<div style="margin-bottom:8px"><label style="font-size:10px;color:var(--text2)">${f.l}</label><input type="${f.t}" value="${em[f.k]}" onchange="saveEmpField(${em.id},'${f.k}',this.value,${f.t==='number'})"></div>`;
+    });
+    h+=`<p style="font-size:10px;color:var(--text3)">Daily rate: R${dRate(em).toFixed(2)}</p></div>`;
+  });
+  h+=`<div class="card"><div class="label mag">Employer Security</div><div style="margin-bottom:8px"><label style="font-size:10px;color:var(--text2)">Employer PIN</label><input value="${S.employerPin}" onchange="S.employerPin=this.value;save()"></div><div><label style="font-size:10px;color:var(--text2)">Alert Email</label><input type="email" value="${S.employerEmail}" onchange="S.employerEmail=this.value;save()"></div></div>`;
+  return h;
+}
+
+function vGuideEdit(){
+  let h=`<div class="card gm"><div class="tc"><div style="font-size:32px;margin-bottom:8px">&#128221;</div><h3 class="tw" style="font-size:18px">House Guide Editor</h3><p style="font-size:11px;color:var(--text2);margin-top:4px">Set placement notes, rules, non-negotiables & deadlines per area</p></div></div>`;
+  Object.entries(AREAS).forEach(([k,a])=>{
+    h+=`<div class="card"><h3 class="tw" style="font-size:14px;font-weight:700;margin-bottom:12px">${a.icon} ${a.name}</h3>`;
+    // Placement notes
+    h+=`<div style="margin-bottom:12px"><div class="label cyan" style="margin-bottom:6px">&#128205; Placement Notes</div><textarea id="note-${k}" rows="3" placeholder="e.g. Remote controls go on the coffee table. Cushions arranged left to right: grey, white, grey...">${S.areaNotes[k]||''}</textarea><button class="btn sm cyan" onclick="saveAreaNote('${k}')" style="margin-top:6px">Save Note</button></div>`;
+    // Rules
+    h+=`<div style="margin-bottom:12px"><div class="label amb" style="margin-bottom:6px">&#9888; Rules & Needs</div><textarea id="rule-${k}" rows="3" placeholder="e.g. Never use bleach on marble counters. Always unplug appliances after use...">${S.areaRules[k]||''}</textarea><button class="btn sm amb" onclick="saveAreaRule('${k}')" style="margin-top:6px">Save Rules</button></div>`;
+    // Chores with NN toggle and deadline
+    h+=`<div class="label red" style="margin-bottom:8px">Chore Settings</div>`;
+    a.chores.forEach(c=>{
+      const ck=choreKey(k,c.name),nn=S.choreFlags[ck]==='nn',dl=S.choreDeadlines[ck]||'';
+      const safeId=k+'-'+c.name.replace(/\s/g,'_');
+      h+=`<div style="padding:8px 10px;border-radius:10px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.05);margin-bottom:6px${nn?';border-left:3px solid var(--red)':''}"><div class="row between" style="margin-bottom:4px"><span style="font-size:12px;color:var(--text)">${c.name} <span style="color:var(--text3);font-size:10px">(${c.minutes}m)</span></span><button class="btn sm ${nn?'red':'ghost'}" onclick="toggleNN('${k}','${c.name}')">${nn?'&#128308; Must-Do':'Set Must-Do'}</button></div><div class="row" style="gap:6px"><span style="font-size:10px;color:var(--text3);white-space:nowrap">Complete by:</span><input type="time" id="dl-${safeId}" value="${dl}" style="flex:1;padding:4px 8px;font-size:11px" onchange="saveDeadline('${k}','${c.name}')"></div></div>`;
+    });
+    h+=`</div>`;
+  });
+  return h;
+}
+
+function vCal(){
+  const em=E(),[y,m]=selMonth.split("-").map(Number);const dIM=new Date(y,m,0).getDate(),fD=new Date(y,m-1,1).getDay();
+  const mn=new Date(y,m-1).toLocaleDateString("en-ZA",{month:"long",year:"numeric"});
+  let h=empSelector();
+  h+=`<div class="card"><div class="row between" style="margin-bottom:16px"><button class="btn sm mag" onclick="changeMonth(-1)">&#9664;</button><span style="color:#f0f;font-weight:700">${mn}</span><button class="btn sm mag" onclick="changeMonth(1)">&#9654;</button></div><div class="grid7">`;
+  ['S','M','T','W','T','F','S'].forEach(d=>{h+=`<div class="cal-hdr">${d}</div>`});
+  for(let i=0;i<fD;i++)h+=`<div></div>`;
+  for(let d=1;d<=dIM;d++){const k=`${y}-${String(m).padStart(2,"0")}-${String(d).padStart(2,"0")}`;const w=em.calendarDays[k]?.worked,isT=k===today(),lv=em.leaveRequests.find(l=>l.date===k&&l.status==='approved');
+    h+=`<div class="cal-day${w?' worked':lv?' leave':' normal'}${isT?' today':''}" onclick="toggleWorkDay('${k}')">${d}${w?'<div style="width:4px;height:4px;border-radius:50%;background:#0f0"></div>':''}</div>`}
+  h+=`</div><p class="tc" style="font-size:10px;color:var(--text3);margin-top:12px">Tap to toggle days</p></div>`;
+  const sal=calcSal(selMonth,em);
+  h+=`<div class="card"><div class="grid2"><div class="stat-box" style="background:rgba(0,255,0,0.06);border:1px solid rgba(0,255,0,0.15);border-radius:12px"><div class="val" style="color:#0f0">${sal.daysWorked}</div><div class="lbl">Days</div></div><div class="stat-box" style="background:rgba(255,0,255,0.06);border:1px solid rgba(255,0,255,0.15);border-radius:12px"><div class="val" style="color:#f0f">R${sal.salary.toFixed(2)}</div><div class="lbl">Owed</div></div></div></div>`;
+  return h;
+}
+
+function vClockLog(){
+  let h=empSelector();
+  const em=E();h+=`<div class="card"><div class="label mag">Clock Log</div>`;
+  if(!em.clockLog.length)h+=`<p class="tc" style="color:var(--text3);font-size:11px;padding:32px">No entries.</p>`;
+  else em.clockLog.slice().reverse().forEach(c=>{h+=`<div class="log-entry ${c.type}" style="border:1px solid ${c.type==='in'?'rgba(0,255,0,0.1)':'rgba(255,255,255,0.04)'}"><span style="color:${c.type==='in'?'#0f0':'var(--text3)'};font-weight:600">${c.type==='in'?'&#10148; In':'&#10094; Out'}</span><span class="flex1"></span><span style="color:var(--text3)">${c.date} ${fmt(c.time)}</span></div>`});
+  h+=`</div>`;return h;
+}
+
+function vEmpLeave(){
+  let h=empSelector();const em=E();
+  h+=`<div class="card"><div class="label mag">Leave Requests</div>`;
+  if(!em.leaveRequests.length)h+=`<p class="tc" style="color:var(--text3);font-size:11px;padding:32px">No requests.</p>`;
+  else em.leaveRequests.slice().reverse().forEach(l=>{
+    const ico=l.type==='sick'?'&#129298; Sick':l.type==='leave'?'&#127958; Leave':'&#128104;&#8205;&#128105;&#8205;&#128103; Family';
+    h+=`<div style="padding:12px;border-radius:12px;background:${l.status==='pending'?'rgba(255,180,0,0.05)':l.status==='approved'?'rgba(0,255,0,0.04)':'rgba(255,0,0,0.04)'};border:1px solid ${l.status==='pending'?'rgba(255,180,0,0.2)':l.status==='approved'?'rgba(0,255,0,0.15)':'rgba(255,0,0,0.15)'};margin-bottom:8px"><div class="row between"><div><span class="tw" style="font-size:13px;font-weight:600">${ico}</span><p style="font-size:11px;color:var(--text2);margin-top:2px">${dateDisp(l.date)}</p>${l.note?`<p style="font-size:10px;color:var(--text3);margin-top:2px">${l.note}</p>`:''}</div><span class="status-badge badge-${l.status}">${l.status}</span></div>`;
+    if(l.status==='pending')h+=`<div class="row" style="margin-top:10px;gap:8px"><button class="btn cyan sm" onclick="approveLeave(${l.id})">&#10003; Approve</button><button class="btn red sm" onclick="declineLeave(${l.id})">&#10005; Decline</button></div>`;
+    h+=`</div>`});
+  h+=`</div>`;return h;
+}
+
+// ========== INIT ==========
+if(!activeEmpId&&S.employees.length)activeEmpId=S.employees[0].id;
+renderLogin();
+</script>
+</body>
+</html>
